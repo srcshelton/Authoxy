@@ -27,6 +27,7 @@
 
 #import <PreferencePanes/PreferencePanes.h>
 #import <Cocoa/Cocoa.h>
+//#import <SecurityInterface/SFAuthorizationView.h>
 
 #import <sys/types.h>
 #import <sys/sysctl.h>
@@ -42,8 +43,13 @@ typedef struct kinfo_proc kinfo_proc;
 #define AUTHOXYD_PORT_PATH @"/tmp/authoxyd.port"
 #define SYSTEM_LOG_PATH   @"/var/log/system.log"
 
+//ha, that's funny, 10.2 doesn't have setHidden, so I'm going to delete and add the text instead!
+#define CHANGES_STRING    @"Changes will not take affect until Authoxy is stopped and restarted."
+#define MAX_LOG_SIZE      750000
+
 @interface Authoxy_PantherPref : NSPreferencePane 
 {
+//  IBOutlet SFAuthorizationView *aAuthorization;
   IBOutlet NSTabView *tTabs;
   
   IBOutlet NSTextField*   fAddress;
@@ -53,6 +59,7 @@ typedef struct kinfo_proc kinfo_proc;
   IBOutlet NSTextField*   fLocalPort;
   IBOutlet NSTextField*   fUsername;
   IBOutlet NSTextField*   fStatus;
+  IBOutlet NSTextField*   fChanges;
   IBOutlet NSButton*      cLogging;
   IBOutlet NSButton*      cPromptForCredentials;
   IBOutlet NSButtonCell*  rAutoConfig;
@@ -84,10 +91,14 @@ typedef struct kinfo_proc kinfo_proc;
 - (IBAction)startStop:(id)sender;
 - (IBAction)setAutoManualConfig:(id)sender;
 - (IBAction)setNTLMConfig:(id)sender;
+- (IBAction)changeMade:(id)sender;
 
 - (id)initWithBundle:(NSBundle *)bundle;
 - (void)dealloc;
-
+/*
+- (void)authorizationViewDidDeauthorize:(SFAuthorizationView *)view;
+- (void)authorizationViewDidAuthorize:(SFAuthorizationView *)view;
+*/
 - (void)mainViewDidLoad;
 - (void)updateStatus:(NSTimer*)theTimer;
 - (void)didUnselect;

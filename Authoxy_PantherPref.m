@@ -106,6 +106,12 @@
     [lastLocalPort setString:@"unknown"];
     
     running = FALSE; //since the button is "Start Authoxy" by default
+    
+    [fChanges setStringValue:@""];
+    //Setup the authorization view
+//    [aAuthorization setString:"net.hrsoftworks.AuthoxyPref.authorized"];
+//    [aAuthorization setDelegate:self];
+//    [aAuthorization updateStatus:self];
   }
   return self;
 }
@@ -125,6 +131,28 @@
   
   [super dealloc];
 }
+
+/**************************************************************/
+/* authorizationViewDidDeauthorize                            */
+/* Lock was successfully unlocked. Make the settings available*/
+/**************************************************************/
+//- (void)authorizationViewDidDeauthorize:(SFAuthorizationView *)view
+//{
+//  [[fTabs tabViewItemAtIndex:0] setEnabled:YES];
+//  [[fTabs tabViewItemAtIndex:1] setEnabled:YES];
+//  [fTabs selectTabViewItemAtIndex:0];
+//}
+
+/**************************************************************/
+/* authorizationViewDidAuthorize                              */
+/* Lock is locked. Lock off the settings.                     */
+/**************************************************************/
+//- (void)authorizationViewDidAuthorize:(SFAuthorizationView *)view
+//{
+//  [[fTabs tabViewItemAtIndex:0] setEnabled:NO];
+//  [[fTabs tabViewItemAtIndex:1] setEnabled:NO];
+//  [fTabs selectTabViewItemAtIndex:2];
+//}
 
 /**************************************************************/
 /* mainViewDidLoad                                            */
@@ -260,6 +288,12 @@
     }
     else
     {
+      //if we get here, then the PID in the file does not match any running daemons. In other words we are out of
+      //sync with the daemon. This may happen if the .pid file disappears while the daemon is running. In an attempt
+      //to regain contact, we'll try force quitting the daemon. Not sure if killall always exists though!
+      system("killall authoxyd"); //dangerous really. I don't think there will be other authoxyd's around, but
+                                  //there may not be a killall program
+      
       [statusString setString:@"Not running"];
       [bStartStop setTitle:@"Start Authoxy"];
       running=FALSE;
@@ -284,32 +318,40 @@
       NSDate *sysModDate = [systemLog objectForKey:NSFileModificationDate];
       if([sysModDate compare:lastSysModDate] == NSOrderedDescending)
       {
-        NSString *logStr = [NSString stringWithContentsOfFile:SYSTEM_LOG_PATH];
-        NSMutableString *authLogStr = [NSMutableString string];
-        NSRange myRange = {0,1};
-        NSRange mySearchRange;
-        int endIndex, length = [logStr length];
-        while(myRange.location < length)
+        NSNumber *sysModSize = [systemLog objectForKey:NSFileSize];
+        if(sysModSize && ([sysModSize intValue] > MAX_LOG_SIZE))
         {
-          [logStr getLineStart:&myRange.location end:&endIndex contentsEnd:nil forRange:myRange];
-          myRange.length=endIndex-myRange.location;
-          mySearchRange = [logStr rangeOfString:@"authoxyd: " options:0 range:myRange];
-          if(mySearchRange.length != 0)
-          {
-            myRange.length = 16; //size of time stamp
-            [authLogStr appendString:[logStr substringWithRange:myRange]];
-            mySearchRange.location += 8;  //skip the search word
-            mySearchRange.length = endIndex-mySearchRange.location;
-            [authLogStr appendString:[logStr substringWithRange:mySearchRange]];
-          }
-          myRange.location = endIndex;
-          myRange.length = 1;
+          [tMessages setString:@"The system log has grown too large to parse reliably."];
         }
-
-        [tMessages setString:authLogStr];
-        
-        myRange.location = [authLogStr length];
-        [tMessages scrollRangeToVisible:myRange];
+        else
+        {
+          NSString *logStr = [NSString stringWithContentsOfFile:SYSTEM_LOG_PATH];
+          NSMutableString *authLogStr = [NSMutableString string];
+          NSRange myRange = {0,1};
+          NSRange mySearchRange;
+          int endIndex, length = [logStr length];
+          while(myRange.location < length)
+          {
+            [logStr getLineStart:&myRange.location end:&endIndex contentsEnd:nil forRange:myRange];
+            myRange.length=endIndex-myRange.location;
+            mySearchRange = [logStr rangeOfString:@"authoxyd: " options:0 range:myRange];
+            if(mySearchRange.length != 0)
+            {
+              myRange.length = 16; //size of time stamp
+              [authLogStr appendString:[logStr substringWithRange:myRange]];
+              mySearchRange.location += 8;  //skip the search word
+              mySearchRange.length = endIndex-mySearchRange.location;
+              [authLogStr appendString:[logStr substringWithRange:mySearchRange]];
+            }
+            myRange.location = endIndex;
+            myRange.length = 1;
+          }
+          
+          [tMessages setString:authLogStr];
+          
+          myRange.location = [authLogStr length];
+          [tMessages scrollRangeToVisible:myRange];
+        }
         
         [lastSysModDate release];
         lastSysModDate = [sysModDate retain];
@@ -341,6 +383,7 @@
   {
     /* make sure settings are up to date */
     [self setSettings];
+    [fChanges setStringValue:@""]; //hide the restart msg
 
     NSString *daemonPath = [[NSBundle bundleWithIdentifier:@"net.hrsoftworks.AuthoxyPref"] pathForAuxiliaryExecutable:@"authoxyd"];
     if(daemonPath != NULL)
@@ -378,6 +421,8 @@
 /**************************************************************/
 - (IBAction)setAutoManualConfig:(id)sender
 {
+  [self changeMade:sender];
+
 //  if([rAutoConfig state] == NSOnState)
   if([[sender selectedCell] tag] == AUTO_CELL_TAG)
   {
@@ -400,6 +445,8 @@
 /**************************************************************/
 - (IBAction)setNTLMConfig:(id)sender
 {
+  [self changeMade:sender];
+  
   if([sender state] == NSOnState)
   {
     [fNTLMDomain setEnabled:YES];
@@ -410,6 +457,15 @@
     [fNTLMDomain setEnabled:NO];
     [fNTLMHost setEnabled:NO];
   }
+}
+
+/**************************************************************/
+/* changeMade                                                 */
+/* Looks like a change was made to the settings. Show the msg */
+/**************************************************************/
+- (IBAction)changeMade:(id)sender
+{
+  [fChanges setStringValue:CHANGES_STRING];
 }
 
 /**************************************************************/

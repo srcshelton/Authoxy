@@ -23,7 +23,12 @@
             SUPERCLASS = NSPreferencePane; 
         }, 
         {
-            ACTIONS = {setAutoManualConfig = id; setNTLMConfig = id; startStop = id; }; 
+            ACTIONS = {
+                changeMade = id; 
+                setAutoManualConfig = id; 
+                setNTLMConfig = id; 
+                startStop = id; 
+            }; 
             CLASS = "Authoxy_PantherPref"; 
             LANGUAGE = ObjC; 
             OUTLETS = {
@@ -32,6 +37,7 @@
                 cNTLMEnabled = NSButton; 
                 cPromptForCredentials = NSButton; 
                 fAddress = NSTextField; 
+                fChanges = NSTextField; 
                 fLocalPort = NSTextField; 
                 fNTLMDomain = NSTextField; 
                 fNTLMHost = NSTextField; 
@@ -49,6 +55,7 @@
             SUPERCLASS = NSPreferencePane; 
         }, 
         {CLASS = FirstResponder; LANGUAGE = ObjC; SUPERCLASS = NSObject; }, 
+        {CLASS = NSObject; LANGUAGE = ObjC; }, 
         {
             CLASS = NSPreferencePane; 
             LANGUAGE = ObjC; 
@@ -59,7 +66,9 @@
                 "_window" = id; 
             }; 
             SUPERCLASS = NSObject; 
-        }
+        }, 
+        {CLASS = SFAuthorization; LANGUAGE = ObjC; SUPERCLASS = NSObject; }, 
+        {CLASS = SFAuthorizationView; LANGUAGE = ObjC; SUPERCLASS = NSView; }
     ); 
     IBVersion = 1; 
 }
