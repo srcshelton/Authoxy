@@ -389,6 +389,13 @@
     if(daemonPath != NULL)
     {
       NSTask *daemon = [NSTask launchedTaskWithLaunchPath:daemonPath arguments:[self getDaemonStartArgs]];
+      
+//      [NSThread sleepUntilDate:[NSDate dateWithTimeIntervalSinceNow:10]];  //pause for two seconds before getting the PID
+  
+      //Note that this is just an educated guess at best. Because daemon() calls fork(), the PID could be
+      //anything. This only way to ensure we have the correct PID is to get the daemon to report it after
+      //becoming a daemon, and that is just what happens. The PID file is overwritten by the daemon when it starts
+      //and we retrieve the value from there during updateStatus.
       daemonPID = [daemon processIdentifier] + 1; //plus one because it daemon and increments the PID
                                                   //(hope it doesn't loop or skip or something)
                                                   //WTF? As of 040112, it seems to be PID+2??? Today it's not. Watch this fix_prebinding!

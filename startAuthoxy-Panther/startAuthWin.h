@@ -4,6 +4,8 @@
 
 #include "base64.h"
 
+#define AUTHOXYD_PID_PATH @"/tmp/authoxyd.pid"
+
 @interface startAuthWin : NSWindow
 {
   IBOutlet NSTextField *status;

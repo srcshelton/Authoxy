@@ -13,7 +13,7 @@
   if(check && CFBooleanGetValue(check))  //then we need to prompt for the username and password, base64 it, and put it back in the prefs
     theTimer = [NSTimer scheduledTimerWithTimeInterval:0.5 target:self selector:@selector(promptForCredentials:) userInfo:nil repeats:NO];
   else
-    theTimer = [NSTimer scheduledTimerWithTimeInterval:2 target:self selector:@selector(doTheStuff:) userInfo:nil repeats:NO];
+    theTimer = [NSTimer scheduledTimerWithTimeInterval:0.5 target:self selector:@selector(doTheStuff:) userInfo:nil repeats:NO];
 }
 
 - (void)promptForCredentials:(NSTimer*)theTimer
@@ -58,9 +58,27 @@
     if(args)
     {
       NSTask *daemon = [NSTask launchedTaskWithLaunchPath:daemonPath arguments:args];
-      int daemonPID = [daemon processIdentifier] + 1;  //plus one because it daemon and increments the PID
-                                                      //(hope it doesn't loop or skip or something)
-      [status setStringValue:@"Successful!"];
+//      int daemonPID = [daemon processIdentifier] + 1;  //plus one because it daemons and increments the PID
+                                                       //(hope it doesn't loop or skip or something)
+      //okay, there's no guarantee that that +1 shit will give us the right PID. Instead, we're going to
+      //leave it up to the daemon to report its own PID. Thus, we will give it a couple of seconds to
+      //do that, and then retrieve the value from there.
+      int daemonPID = -1;
+      [NSThread sleepUntilDate:[NSDate dateWithTimeIntervalSinceNow:2]];
+      
+      if([daemon isRunning])  //then it hasn't daemon'ed yet, give it another couple of secs
+        [NSThread sleepUntilDate:[NSDate dateWithTimeIntervalSinceNow:2]];
+      
+      NSDictionary *authoxydPID = [[NSFileManager defaultManager] fileAttributesAtPath:AUTHOXYD_PID_PATH
+                                                                          traverseLink:YES];
+      if(authoxydPID)
+      {
+        NSString *PIDStr = [NSString stringWithContentsOfFile:AUTHOXYD_PID_PATH];
+        daemonPID = [PIDStr intValue];
+        [status setStringValue:@"Successful!"];
+      }
+      else
+        [status setStringValue:@"Daemon did not start!"];
   
       //save that daemonPID
       CFPreferencesSetAppValue(CFSTR("AuthoxyDaemonPID"),
