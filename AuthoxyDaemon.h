@@ -74,7 +74,7 @@ void bufcat(char *dst, int dstLen, const char *src, int srcLen);
 int bufferMatchesStringAtIndex(const char *buffer, const char *string, int index);
 
 //connections
-#define INCOMING_BUF_SIZE 1024
+#define INCOMING_BUF_SIZE 2048
 #define PEEK_BUF_SIZE 255
 //yes, yes, there could be bigger URL's than this, but eh, they're not that important
 #define MAX_PEND	10

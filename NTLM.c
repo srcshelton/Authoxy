@@ -182,12 +182,10 @@ int establishNTLMAuthenticationParentOne(int clientConnection, int *serverSocket
   {
     if(requestBuf)
     {
-      char *tempBuf = (char*)malloc(requestSize);
+      char *tempBuf = (char*)malloc(requestSize+recvBufSize);
       bufcpy(tempBuf, requestBuf, requestSize);
       free(requestBuf);
-      requestBuf = (char*)malloc(requestSize+recvBufSize);
-      bufcpy(requestBuf, tempBuf, requestSize);
-      free(tempBuf);
+      requestBuf = tempBuf;
     }
     else
       requestBuf = (char*)malloc(recvBufSize);
@@ -206,7 +204,7 @@ int establishNTLMAuthenticationParentOne(int clientConnection, int *serverSocket
         recvBufSize-=19;
         
         if(logging)
-          syslog(LOG_INFO, "Found Connection: close. Hiding for NTLM Authentication", contentLength);
+          syslog(LOG_INFO, "Found Connection: close. Hiding for NTLM Authentication");
       }
     }
     for(i = (requestSize<16) ? 0 : requestSize-16; !contentLength && i<requestSize+recvBufSize-15; i++)
@@ -441,6 +439,7 @@ int establishNTLMAuthenticationChildOne(int clientConnection, int serverSocket, 
     return 1;
   
   int recvBufSize, responseSize=0;
+  int contentLength=0, endOfResponse=0;
   char listenBuf[INCOMING_BUF_SIZE+1], *responseBuf=NULL;
   /*****Step 2 - Proxy returns a 407 Unauthorised to the client*****/
   if(logging)
@@ -450,18 +449,44 @@ int establishNTLMAuthenticationChildOne(int clientConnection, int serverSocket, 
   {
     if(responseBuf)
     {
-      char *tempBuf = (char*)malloc(responseSize);
+      char *tempBuf = (char*)malloc(responseSize+recvBufSize);
       bufcpy(tempBuf, responseBuf, responseSize);
       free(responseBuf);
-      responseBuf = (char*)malloc(responseSize+recvBufSize);
-      bufcpy(responseBuf, tempBuf, responseSize);
-      free(tempBuf);
+      responseBuf = tempBuf;
     }
     else
       responseBuf = (char*)malloc(recvBufSize);
     
     bufcat(responseBuf, responseSize, listenBuf, recvBufSize);
+    
+    int i;
+    for(i = (responseSize<16) ? 0 : responseSize-16; !contentLength && i<responseSize+recvBufSize-15; i++)
+    {
+      if(bufferMatchesStringAtIndex(responseBuf, "Content-Length: ", i))
+      {
+        int n=0;
+        contentLength = responseBuf[i+16]-'0';
+        while(isdigit(responseBuf[i+17+n]))
+        {
+          contentLength*=10;
+          contentLength+=(responseBuf[i+17+n++]-'0');
+        }
+        if(logging)
+          syslog(LOG_INFO, "Content Length of response: %d", contentLength);
+      }
+    }
+    for(i = (responseSize<4) ? 0 : responseSize-4; !endOfResponse && i<responseSize+recvBufSize-3; i++)
+    {
+      if(bufferMatchesStringAtIndex(responseBuf, CRLF, i) && bufferMatchesStringAtIndex(responseBuf, CRLF, i+2))
+      {
+        endOfResponse = i+4;
+        break;
+      }
+    }
     responseSize+=recvBufSize;
+    
+    if(endOfResponse && responseSize >= endOfResponse + contentLength)
+      break;
   }
   if(recvBufSize<0)
   {
@@ -520,7 +545,7 @@ int establishNTLMAuthenticationChildTwo(int clientConnection, int serverSocket, 
   int recvBufSize, responseSize=0;
   char listenBuf[INCOMING_BUF_SIZE+1], *responseBuf=NULL;
   int contentLength=0;
-  char endOfResponse = 0;
+  int endOfResponse = 0;
 
   if(logging)
     syslog(LOG_INFO, "Entering Step 4");
@@ -530,12 +555,10 @@ int establishNTLMAuthenticationChildTwo(int clientConnection, int serverSocket, 
   {
     if(responseBuf)
     {
-      char *tempBuf = (char*)malloc(responseSize);
+      char *tempBuf = (char*)malloc(responseSize+recvBufSize);
       bufcpy(tempBuf, responseBuf, responseSize);
       free(responseBuf);
-      responseBuf = (char*)malloc(responseSize+recvBufSize);
-      bufcpy(responseBuf, tempBuf, responseSize);
-      free(tempBuf);
+      responseBuf = tempBuf;
     }
     else
       responseBuf = (char*)malloc(recvBufSize);
