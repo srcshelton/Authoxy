@@ -34,6 +34,7 @@
 #define AP_AutoConfig         "AuthoxyAutoConfig"
 #define AP_PACAddress         "AuthoxyPACAddress"
 #define AP_PromptCredentials  "AuthoxyPromptCredentials"
+#define AP_ExternalConnections "AuthoxyExternalConnections"
 
 #define AP_NTLM               "AuthoxyUsingNTLM"
 #define AP_NTLM_Domain        "AuthoxyNTLMDomain"

@@ -33,6 +33,7 @@
             LANGUAGE = ObjC; 
             OUTLETS = {
                 bStartStop = NSButton; 
+                cExternalConnections = NSButton; 
                 cLogging = NSButton; 
                 cNTLMEnabled = NSButton; 
                 cPromptForCredentials = NSButton; 

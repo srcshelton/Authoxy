@@ -34,13 +34,13 @@ int main(int argc, char* argv[])
   JSFunction *compiledPAC;
   
   char usingNTLM=0;  //are we using NTLM?
-  if(argc == 7)
+  if(argc == 8)
     usingNTLM=0;
-  else if(argc == 9)
+  else if(argc == 10)
     usingNTLM=1;
   else
   {
-    syslog(LOG_ERR, "Fatal Error: authoxyd needs either 6 or 8 command line parameters. Check there are no spaces in your settings.");
+    syslog(LOG_ERR, "Fatal Error: authoxyd needs either 7 or 9 command line parameters. Check there are no spaces in your settings.");
     return 1;
   }
 
@@ -88,9 +88,9 @@ int main(int argc, char* argv[])
   if(ARG_AUTO)
   {
     if(!(rt = JS_NewRuntime(1L * 1024L * 1024L)))
-      return NULL;
+      return 1;
     if(!(cx = JS_NewContext(rt, 4L * 1024L)))
-      return NULL;
+      return 1;
     global = JS_NewObject(cx, &global_class, NULL, NULL);
     JS_InitStandardClasses(cx, global);
     
@@ -100,11 +100,11 @@ int main(int argc, char* argv[])
   }
   else
     compiledPAC = NULL;
-//ARG_LPORT is local port number, MAX_PEND is max number of pending connections.
-  if( (clientSocket = establishClientSide(ARG_LPORT, MAX_PEND)) < 0)
+//ARG_LPORT is local port number, MAX_PEND is max number of pending connections, ARG_EXTERN is true if external connections are allowed
+  if( (clientSocket = establishClientSide(ARG_LPORT, MAX_PEND, ARG_EXTERN)) < 0)
     return 1;
 
-  syslog(LOG_INFO, "Authoxy has started successfully");
+  syslog(LOG_NOTICE, "Authoxy has started successfully");
 //right, client socket is setup, the fun begins...
   for (;;)	//enter an endless loop, handling requests
   {
@@ -158,7 +158,7 @@ void performDaemonConnection(char *argAdd, int argRPort, int clientConnection, c
   
   if( (serverSocket = establishServerSide(argAdd, argRPort)) < 0 )
   {
-    syslog(LOG_INFO, "Couldn't open connection to proxy server. Errno: %m");
+    syslog(LOG_NOTICE, "Couldn't open connection to proxy server. Errno: %m");
     close(clientConnection);
     exit(EXIT_FAILURE);
   }
@@ -245,7 +245,7 @@ void performDaemonConnectionWithPACFile(JSFunction *compiledPAC, char *argADD, i
     {
       if(*resultIter=='\0')                                                   //end of result string
       {
-        syslog(LOG_INFO, "Exhausted PAC file server list and still failed to make a connection. Giving up on connection.");
+        syslog(LOG_NOTICE, "Exhausted PAC file server list and still failed to make a connection. Giving up on connection.");
         close(clientConnection);
         exit(EXIT_FAILURE);
       }      
@@ -271,7 +271,7 @@ void performDaemonConnectionWithPACFile(JSFunction *compiledPAC, char *argADD, i
       else                                                                    //maybe SOCKS server or corrupted result string
       {
         syslog(LOG_ERR, "Unsupported connection method requested. Giving up on connection.");
-        syslog(LOG_INFO, result);
+        syslog(LOG_NOTICE, result);
         exit(EXIT_FAILURE);
       }
       while(*resultIter!=';' && *resultIter!='\0')
@@ -279,7 +279,7 @@ void performDaemonConnectionWithPACFile(JSFunction *compiledPAC, char *argADD, i
       while(*resultIter!='D' && *resultIter!='P' && *resultIter!='\0')
         resultIter++;
       
-//      syslog(LOG_INFO, "About to try %s:%d, direct:%d", proxyAdd, proxyPort, direct);
+//      syslog(LOG_NOTICE, "About to try %s:%d, direct:%d", proxyAdd, proxyPort, direct);
     }
     while( (serverSocket = establishServerSide(proxyAdd, proxyPort)) < 0 );
     free(result);

@@ -65,6 +65,7 @@ typedef struct kinfo_proc kinfo_proc;
   IBOutlet NSButtonCell*  rAutoConfig;
   IBOutlet NSButtonCell*  rNoAutoConfig;
   IBOutlet NSMatrix*      mAutoManualConfig;
+  IBOutlet NSButton*      cExternalConnections;
   
   //NTLM
   IBOutlet NSButton*      cNTLMEnabled;

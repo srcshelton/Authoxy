@@ -56,8 +56,9 @@
 #define ARG_LPORT	(atoi(argv[4]))
 #define ARG_LOG		(argv[5][0]=='t')
 #define ARG_AUTO	(argv[6][0]=='t')
-#define ARG_DOMAIN  (argv[7])
-#define ARG_HOST    (argv[8])
+#define ARG_EXTERN  (argv[7][0]=='t')
+#define ARG_DOMAIN  (argv[8])
+#define ARG_HOST    (argv[9])
 
 //we can't put this in /var/run because we aren't root, so here'll do.
 #define AUTHOXYD_PID_PATH "/tmp/authoxyd.pid"
@@ -89,7 +90,7 @@ int bufferMatchesStringAtIndex(const char *buffer, const char *string, int index
 
 int conductSession(int clientConnection, char authStr[], int serverSocket, char logging, struct NTLMSettings *theNTLMSettings);
 int handleConnection(int listenSocket);
-int establishClientSide(int port, int maxpend);
+int establishClientSide(int port, int maxpend, char external);
 int establishServerSide(char *hostname, unsigned short portnum);
 int conductClientSide(int clientConnection, char authStr[], int serverSocket, char logging);
 int conductClientSideDirectly(int clientConnection, int serverSocket, char logging);
@@ -224,10 +225,10 @@ int establishNTLMGetType1String(char **authString, int *authStringSize, const ch
 int establishNTLMGetType1StringBase64(char **authString, int *authStringSize, const char *domain, const char *workstation);
 int establishNTLMParseType2String(char *authString, int authStringSize, char **nonce, char logging);
 int establishNTLMParseType2StringBase64(char *authString, int authStringSize, char **nonce, char logging);
-int establishNTLMGetType3String(char **authString, int *authStringSize, const char *username, const char *password, const char *host, const char *domain, const char *nonce);
-int establishNTLMGetType3StringBase64(char **authString, int *authStringSize, const char *username, const char *password, const char *host, const char *domain, const char *nonce);
+int establishNTLMGetType3String(char **authString, int *authStringSize, const char *username, const char *password, const char *host, const char *domain, const unsigned char *nonce);
+int establishNTLMGetType3StringBase64(char **authString, int *authStringSize, const char *username, const char *password, const char *host, const char *domain, const unsigned char *nonce);
 
-int establishNTLMGetHashedPassword(char **response, const char *password, const char *nonce);
+int establishNTLMGetHashedPassword(char **response, const char *password, const unsigned char *nonce);
 
 //convert a 4 byte value (a long) from big endian to little endian
 #define LITTLE_ENDIAN_4(x)    ( ((x&0x000000FF)<<24) | ((x&0x0000FF00)<<8) | ((x&0x00FF0000)>>8) | ((x&0xFF000000)>>24) )

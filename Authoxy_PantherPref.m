@@ -89,6 +89,10 @@
     if (!(value && CFGetTypeID(value) == CFStringGetTypeID()))
       CFPreferencesSetAppValue(CFSTR(AP_PACAddress), @"http://www.myhost.edu.au/proxy.pac", appID);
 
+    value = CFPreferencesCopyAppValue(CFSTR(AP_ExternalConnections), appID);
+    if (!(value && CFGetTypeID(value) == CFBooleanGetTypeID()))
+      CFPreferencesSetAppValue(CFSTR(AP_ExternalConnections), kCFBooleanFalse, appID);
+    
     //NTLM settings
     value = CFPreferencesCopyAppValue(CFSTR(AP_NTLM), appID);
     if (!(value && CFGetTypeID(value) == CFBooleanGetTypeID()))
@@ -163,7 +167,7 @@
 {
   char *un=NULL, *pw=NULL;
 
-  if(decodePassKey( (unsigned char*)[(NSString*)CFPreferencesCopyAppValue( CFSTR(AP_Authorization), appID ) cString], &un, &pw))
+  if(decodePassKey((char *)[(NSString*)CFPreferencesCopyAppValue( CFSTR(AP_Authorization), appID ) cString], &un, &pw))
   {
     //decode was unsuccessful, so fill in default values
     [fUsername setStringValue:@"noone"];
@@ -182,6 +186,7 @@
   [fRemotePort setStringValue:(NSString*)CFPreferencesCopyAppValue(CFSTR(AP_RemotePort), appID)];
   [fLocalPort setStringValue:(NSString*)CFPreferencesCopyAppValue(CFSTR(AP_LocalPort), appID)];
   [cLogging setState:CFBooleanGetValue(CFPreferencesCopyAppValue(CFSTR(AP_Logging), appID))];
+  [cExternalConnections setState:CFBooleanGetValue(CFPreferencesCopyAppValue(CFSTR(AP_ExternalConnections), appID))];
   [cPromptForCredentials setState:CFBooleanGetValue(CFPreferencesCopyAppValue(CFSTR(AP_PromptCredentials), appID))];
   CFNumberGetValue(CFPreferencesCopyAppValue(CFSTR(AP_DaemonPID), appID),
                    kCFNumberSInt32Type,
@@ -329,7 +334,7 @@
           NSMutableString *authLogStr = [NSMutableString string];
           NSRange myRange = {0,1};
           NSRange mySearchRange;
-          int endIndex, length = [logStr length];
+          unsigned int endIndex, length = [logStr length];
           while(myRange.location < length)
           {
             [logStr getLineStart:&myRange.location end:&endIndex contentsEnd:nil forRange:myRange];
@@ -494,6 +499,10 @@
     CFPreferencesSetAppValue(CFSTR(AP_Logging), kCFBooleanTrue, appID);
   else
     CFPreferencesSetAppValue(CFSTR(AP_Logging), kCFBooleanFalse, appID);
+  if([cExternalConnections state] == NSOnState)
+    CFPreferencesSetAppValue(CFSTR(AP_ExternalConnections), kCFBooleanTrue, appID);
+  else
+    CFPreferencesSetAppValue(CFSTR(AP_ExternalConnections), kCFBooleanFalse, appID);
   if([cPromptForCredentials state] == NSOnState)
     CFPreferencesSetAppValue(CFSTR(AP_PromptCredentials), kCFBooleanTrue, appID);
   else
@@ -538,6 +547,8 @@
       [NSString stringWithString:
         (CFBooleanGetValue(CFPreferencesCopyAppValue(CFSTR(AP_Logging), appID)) ? @"true" : @"false")],
       @"true",	//use auto config
+      [NSString stringWithString:
+        (CFBooleanGetValue(CFPreferencesCopyAppValue(CFSTR(AP_ExternalConnections), appID)) ? @"true" : @"false")],
       nil];
   }
   else
@@ -550,6 +561,8 @@
       [NSString stringWithString:
         (CFBooleanGetValue(CFPreferencesCopyAppValue(CFSTR(AP_Logging), appID)) ? @"true" : @"false")],
       @"false",	//no auto config here
+      [NSString stringWithString:
+        (CFBooleanGetValue(CFPreferencesCopyAppValue(CFSTR(AP_ExternalConnections), appID)) ? @"true" : @"false")],
       nil];
   }
   

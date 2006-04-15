@@ -64,10 +64,10 @@ JSFunction* compilePAC(JSContext *cx, char *pacURL)
   curl_easy_setopt(myCurl, CURLOPT_FILE, scriptHdl);
   curl_easy_setopt(myCurl, CURLOPT_URL, pacURL);	//URL of pac file to download
 
-//  syslog(LOG_INFO, "About to perform curl");
+//  syslog(LOG_NOTICE, "About to perform curl");
   curl_easy_perform(myCurl);	//download the pac file and then,
   curl_easy_cleanup(myCurl);	//clean up after ourselves
-//  syslog(LOG_INFO, "Performed curl");
+//  syslog(LOG_NOTICE, "Performed curl");
   
   JSFunction *compiledFunc=NULL;
   if(*scriptHdl!=NULL)
@@ -176,7 +176,7 @@ char* executePAC(JSContext *cx, JSFunction *compiledScript, const char *arg1, co
   args[0] = STRING_TO_JSVAL(jsArg1);
   args[1] = STRING_TO_JSVAL(jsArg2);
 
-//  syslog(LOG_INFO, "Arg1: %s, Arg2: %s", arg1, arg2);
+//  syslog(LOG_NOTICE, "Arg1: %s, Arg2: %s", arg1, arg2);
   if(JS_CallFunction(cx, global, compiledScript, 2, args, &rval) == JS_FALSE)
   {
     syslog(LOG_ERR, "Error in executing pac script");
@@ -187,7 +187,7 @@ char* executePAC(JSContext *cx, JSFunction *compiledScript, const char *arg1, co
   char *result = (char *)malloc(JS_GetStringLength(str)+1);
   result = JS_GetStringBytes(str);
   
-//  syslog(LOG_INFO, "script result: %s", JS_GetStringBytes(str));
+//  syslog(LOG_NOTICE, "script result: %s", JS_GetStringBytes(str));
 
   return result;//JS_GetStringBytes(str);
 }
@@ -198,7 +198,7 @@ JSBool ResolveInC(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *
   hent = gethostbyname(JS_GetStringBytes(JSVAL_TO_STRING(argv[0])));
   if(!hent)
   {
-    syslog(LOG_INFO, "Unable to resolve address. h-errno: %s", hstrerror(h_errno));
+    syslog(LOG_NOTICE, "Unable to resolve address. h-errno: %s", hstrerror(h_errno));
     JSString *result = JS_NewString(cx, "0.0.0.0", 7);
     *rval = STRING_TO_JSVAL(result);
   }
@@ -217,28 +217,28 @@ size_t collectData(void *ptr, size_t size, size_t nmemb, void *stream)
 //  debug = (char*)malloc(size*nmemb + 1);
 //  strncpy(debug, ptr, nmemb*size);
 //  debug[nmemb*size]='\0';
-//  syslog(LOG_INFO, debug);
+//  syslog(LOG_NOTICE, debug);
   char *streamPtr=NULL;
   if(stream)
   {
-//    syslog(LOG_INFO, "stream is not null");
+//    syslog(LOG_NOTICE, "stream is not null");
     streamPtr = *((char**)stream);
   }
   
   if(!streamPtr)
   {
-//    syslog(LOG_INFO, "streamPtr is null");
+//    syslog(LOG_NOTICE, "streamPtr is null");
     streamPtr = (char *)malloc(nmemb*size+1*sizeof(char));
     streamPtr[0]='\0';
   }
   else
   {
-//    syslog(LOG_INFO, "streamPtr is not null");
+//    syslog(LOG_NOTICE, "streamPtr is not null");
     char *tempBuf;
     tempBuf = (char *)malloc((strlen(streamPtr)+1)*sizeof(char));
     tempBuf[0]='\0';
     strcpy(tempBuf, streamPtr);
-//    syslog(LOG_INFO, tempBuf);
+//    syslog(LOG_NOTICE, tempBuf);
     free(streamPtr);
     streamPtr = (char *)malloc((strlen(tempBuf)+1)*sizeof(char)  + nmemb*size);
     streamPtr[0]='\0';
@@ -246,13 +246,13 @@ size_t collectData(void *ptr, size_t size, size_t nmemb, void *stream)
     free(tempBuf);
   }
 
-//  syslog(LOG_INFO, "streamPtr was:");
-//  syslog(LOG_INFO, streamPtr);
-//  syslog(LOG_INFO, "about to append:");
-//  syslog(LOG_INFO, debug);
+//  syslog(LOG_NOTICE, "streamPtr was:");
+//  syslog(LOG_NOTICE, streamPtr);
+//  syslog(LOG_NOTICE, "about to append:");
+//  syslog(LOG_NOTICE, debug);
   strncat(streamPtr, ptr, nmemb*size);
-//  syslog(LOG_INFO, "streamPtr is:");
-//  syslog(LOG_INFO, streamPtr);
+//  syslog(LOG_NOTICE, "streamPtr is:");
+//  syslog(LOG_NOTICE, streamPtr);
 
   *((char**)stream) = streamPtr;
   

@@ -21,7 +21,7 @@
  You should have received a copy of the GNU General Public License
  along with Authoxy; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
- 
+
  */
 
 #include "AuthoxyDaemon.h"
@@ -65,7 +65,7 @@ int establishNTLMAuthentication(int clientConnection, int *serverSocketPtr, char
   shmData->step5Finished=0;
   
   if(logging)
-    syslog(LOG_INFO, "Ready to NTLM!");
+    syslog(LOG_NOTICE, "Ready to NTLM!");
   
   int requestSize=0;
   char *authenticatedRequest=NULL;
@@ -175,7 +175,7 @@ int establishNTLMAuthenticationParentOne(int clientConnection, int *serverSocket
   char listenBuf[INCOMING_BUF_SIZE], *requestBuf=*requestBufPtr;
   int endOfRequest=0, contentLength=0;
   if(logging)
-    syslog(LOG_INFO, "Entering Step 1");
+    syslog(LOG_NOTICE, "Entering Step 1");
   shmData->step1Started=1;
   /*****Step 1 - Client sends regular, unauthenticated request to proxy*****/
   while((recvBufSize = recv(clientConnection, listenBuf, INCOMING_BUF_SIZE, 0)) > 0)  //retrieve the data on the listen socket
@@ -204,7 +204,7 @@ int establishNTLMAuthenticationParentOne(int clientConnection, int *serverSocket
         recvBufSize-=19;
         
         if(logging)
-          syslog(LOG_INFO, "Found Connection: close. Hiding for NTLM Authentication");
+          syslog(LOG_NOTICE, "Found Connection: close. Hiding for NTLM Authentication");
       }
     }
     for(i = (requestSize<16) ? 0 : requestSize-16; !contentLength && i<requestSize+recvBufSize-15; i++)
@@ -219,7 +219,7 @@ int establishNTLMAuthenticationParentOne(int clientConnection, int *serverSocket
           contentLength+=(requestBuf[i+17+n++]-'0');
         }
         if(logging)
-          syslog(LOG_INFO, "Content Length of request: %d", contentLength);
+          syslog(LOG_NOTICE, "Content Length of request: %d", contentLength);
       }
     }
     for(i = (requestSize<4) ? 0 : requestSize-4; !endOfRequest && i<requestSize+recvBufSize-3; i++)
@@ -239,7 +239,7 @@ int establishNTLMAuthenticationParentOne(int clientConnection, int *serverSocket
   if(recvBufSize<0 && errno !=54) //an error, not the connection reset by peer that IE often produces, occured
   {
     if(logging)
-      syslog(LOG_INFO, "NTLM authentication was interrupted by client. Killing session processes. Errno: %m.");
+      syslog(LOG_NOTICE, "NTLM authentication was interrupted by client. Killing session processes. Errno: %m.");
     return 1;
   }
   
@@ -250,7 +250,7 @@ int establishNTLMAuthenticationParentOne(int clientConnection, int *serverSocket
   {
     if((bytesSent += send(serverSocket, &requestBuf[bytesSent], requestSize-bytesSent, 0)) < 0)
     {
-      syslog(LOG_INFO, "Couldn't send to talk connection in Step 1. Errno: %m");
+      syslog(LOG_NOTICE, "Couldn't send to talk connection in Step 1. Errno: %m");
       return 1;
     }
   }
@@ -265,12 +265,12 @@ int establishNTLMAuthenticationParentOne(int clientConnection, int *serverSocket
   if(shmData->step2Finished)
   {
     if(logging)
-      syslog(LOG_INFO, "Child too quick for us in Step 1. Continuing with Step 3.");
+      syslog(LOG_NOTICE, "Child too quick for us in Step 1. Continuing with Step 3.");
   }
   else
   {
     if(logging)
-      syslog(LOG_INFO, "Waiting for Step 2");
+      syslog(LOG_NOTICE, "Waiting for Step 2");
 
     //Pause here
     if(raise(SIGSTOP)<0)
@@ -281,7 +281,7 @@ int establishNTLMAuthenticationParentOne(int clientConnection, int *serverSocket
   }
   
   if(logging)
-    syslog(LOG_INFO, "Entering Step 3");
+    syslog(LOG_NOTICE, "Entering Step 3");
   shmData->step3Started=1;
   /*****Step 3 - Client resubmits request to proxy, with a Type 1 authorization message*****/
   //first, insert the auth string into the headers
@@ -293,7 +293,7 @@ int establishNTLMAuthenticationParentOne(int clientConnection, int *serverSocket
     return 1;
   }
   if(logging)
-    syslog(LOG_INFO, "Created Type 1 string of %d characters", authStringSize);
+    syslog(LOG_NOTICE, "Created Type 1 string of %d characters", authStringSize);
   int authHeaderSize = strlen(AUTH_HEADER);
   char *authenticatedRequest = *authenticatedRequestPtr;
   authenticatedRequest = (char*)malloc(requestSize+authHeaderSize+authStringSize+2);
@@ -343,7 +343,7 @@ int establishNTLMAuthenticationParentTwo(int clientConnection, int serverSocket,
   {
     if((bytesSent += send(serverSocket, &authenticatedRequest[bytesSent], requestSize+authHeaderSize+authStringSize+2-bytesSent, 0)) < 0)
     {
-      syslog(LOG_INFO, "Couldn't send to talk connection in Step 3. Errno: %m");
+      syslog(LOG_NOTICE, "Couldn't send to talk connection in Step 3. Errno: %m");
       return 1;
     }
   }
@@ -352,12 +352,12 @@ int establishNTLMAuthenticationParentTwo(int clientConnection, int serverSocket,
   if(shmData->step4Finished)
   {
     if(logging)
-      syslog(LOG_INFO, "Child too quick for us in Step 3. Continuing with Step 5");
+      syslog(LOG_NOTICE, "Child too quick for us in Step 3. Continuing with Step 5");
   }
   else
   {
     if(logging)
-      syslog(LOG_INFO, "Pausing in Step 3");
+      syslog(LOG_NOTICE, "Pausing in Step 3");
     //Pause here for a moment. The stop will be cancelled with a continue from the other process.
     if(raise(SIGSTOP)<0)
     {
@@ -370,18 +370,18 @@ int establishNTLMAuthenticationParentTwo(int clientConnection, int serverSocket,
   authStringSize=0;
 
   if(logging)
-    syslog(LOG_INFO, "Entering Step 5");
+    syslog(LOG_NOTICE, "Entering Step 5");
   shmData->step5Started=1;
   /*****Step 5 - Client resubmits request to proxy, with a Type 3 authorization message*****/
-  char nonce[8];
-  bufcpy(nonce, shmData->nonce, 8);
+  unsigned char nonce[8];
+  bufcpy((char*)nonce, shmData->nonce, 8);
   
   if(establishNTLMGetType3StringBase64(&authString, &authStringSize, theNTLMSettings->username, theNTLMSettings->password, theNTLMSettings->host, theNTLMSettings->domain, nonce))
   {
     return 1;
   }
   if(logging)
-    syslog(LOG_INFO, "Got Type 3 msg of %d characters.", authStringSize);
+    syslog(LOG_NOTICE, "Got Type 3 msg of %d characters.", authStringSize);
   //insert the auth string into the headers
   authenticatedRequest = (char*)malloc(requestSize+authHeaderSize+authStringSize+2);
   bufcpy(authenticatedRequest, requestBuf, indexForHeader);
@@ -410,7 +410,7 @@ int establishNTLMAuthenticationParentTwo(int clientConnection, int serverSocket,
   {
     if((bytesSent += send(serverSocket, &authenticatedRequest[bytesSent], requestSize-bytesSent, 0)) < 0)
     {
-      syslog(LOG_INFO, "Couldn't send to talk connection in Step 5. Errno: %m");
+      syslog(LOG_NOTICE, "Couldn't send to talk connection in Step 5. Errno: %m");
       return 1;
     }
   }
@@ -443,7 +443,7 @@ int establishNTLMAuthenticationChildOne(int clientConnection, int serverSocket, 
   char listenBuf[INCOMING_BUF_SIZE+1], *responseBuf=NULL;
   /*****Step 2 - Proxy returns a 407 Unauthorised to the client*****/
   if(logging)
-    syslog(LOG_INFO, "Entering Step 2");
+    syslog(LOG_NOTICE, "Entering Step 2");
   shmData->step2Started=1;
   while((recvBufSize = recv(serverSocket, listenBuf, INCOMING_BUF_SIZE, 0)) > 0)
   {
@@ -472,7 +472,7 @@ int establishNTLMAuthenticationChildOne(int clientConnection, int serverSocket, 
           contentLength+=(responseBuf[i+17+n++]-'0');
         }
         if(logging)
-          syslog(LOG_INFO, "Content Length of response: %d", contentLength);
+          syslog(LOG_NOTICE, "Content Length of response: %d", contentLength);
       }
     }
     for(i = (responseSize<4) ? 0 : responseSize-4; !endOfResponse && i<responseSize+recvBufSize-3; i++)
@@ -491,7 +491,7 @@ int establishNTLMAuthenticationChildOne(int clientConnection, int serverSocket, 
   if(recvBufSize<0)
   {
     if(logging)
-      syslog(LOG_INFO, "Server closed ungracefully in NTLM authentication Step 2. Killing session processes. Errno: %m.");
+      syslog(LOG_NOTICE, "Server closed ungracefully in NTLM authentication Step 2. Killing session processes. Errno: %m.");
     return 1;
   }
   
@@ -500,16 +500,16 @@ int establishNTLMAuthenticationChildOne(int clientConnection, int serverSocket, 
   if(strncmp(&responseBuf[9]/*HTTP/1.x */, "407", 3) != 0) //did the proxy return a proxy authentication required error?
   {
     syslog(LOG_ERR, "Unexpected server response in NTLM authentication Step 2. Giving up.");
-//    syslog(LOG_INFO, "Size of response: %d", responseSize);
+//    syslog(LOG_NOTICE, "Size of response: %d", responseSize);
 //    responseBuf[responseSize] = '\0';
-//    syslog(LOG_INFO, "Response was: %s", responseBuf);
+//    syslog(LOG_NOTICE, "Response was: %s", responseBuf);
     free(responseBuf);
     return 1;
   }
   
   //otherwise, step 2 is complete
   if(logging)
-    syslog(LOG_INFO, "Step 2 is complete");
+    syslog(LOG_NOTICE, "Step 2 is complete");
   shmData->step2Finished=1;
 
   if(!(shmData->step3Started))
@@ -548,7 +548,7 @@ int establishNTLMAuthenticationChildTwo(int clientConnection, int serverSocket, 
   int endOfResponse = 0;
 
   if(logging)
-    syslog(LOG_INFO, "Entering Step 4");
+    syslog(LOG_NOTICE, "Entering Step 4");
   shmData->step4Started=1;
   /*****Step 4 - Proxy returns another 407 Unauthorised to the client*****/
   while((recvBufSize = recv(serverSocket, listenBuf, INCOMING_BUF_SIZE, 0)) > 0)
@@ -578,7 +578,7 @@ int establishNTLMAuthenticationChildTwo(int clientConnection, int serverSocket, 
           contentLength+=(responseBuf[i+17+n++]-'0');
         }
         if(logging)
-          syslog(LOG_INFO, "Content-Length: %d", contentLength);
+          syslog(LOG_NOTICE, "Content-Length: %d", contentLength);
       }
     }
     for(i = responseSize<4 ? 0 : responseSize-4; i<responseSize+recvBufSize-3; i++)
@@ -596,7 +596,7 @@ int establishNTLMAuthenticationChildTwo(int clientConnection, int serverSocket, 
   }
   if(recvBufSize<0)
   {
-    syslog(LOG_INFO, "Server closed ungracefully in NTLM authentication Step 4. Killing session processes. Errno: %m.");
+    syslog(LOG_NOTICE, "Server closed ungracefully in NTLM authentication Step 4. Killing session processes. Errno: %m.");
     return 1;
   }
   
@@ -631,13 +631,13 @@ int establishNTLMAuthenticationChildTwo(int clientConnection, int serverSocket, 
   }
   //otherwise, step 4 is complete
   if(logging)
-    syslog(LOG_INFO, "The nonce is: %8s.", nonce);
+    syslog(LOG_NOTICE, "The nonce is: %8s.", nonce);
   bufcpy(shmData->nonce, nonce, 8);
   free(nonce);
   
   shmData->step4Finished=1;
   if(logging)
-    syslog(LOG_INFO, "Finished Step 4");
+    syslog(LOG_NOTICE, "Finished Step 4");
   if(!(shmData->step5Started))
   {
     if(kill(ppid, SIGCONT)<0)
@@ -802,79 +802,79 @@ int establishNTLMParseType2String(char *authString, int authStringSize, char **n
   }
   
   datas = LITTLE_ENDIAN_2(msgPtr->target.length);
-  if(logging) syslog(LOG_INFO, "NTLM: Target length is %d", datas);
+  if(logging) syslog(LOG_NOTICE, "NTLM: Target length is %d", datas);
   datas = LITTLE_ENDIAN_2(msgPtr->target.length2);
-  if(logging) syslog(LOG_INFO, "NTLM: Target length 2 is %d", datas);
+  if(logging) syslog(LOG_NOTICE, "NTLM: Target length 2 is %d", datas);
   datal = LITTLE_ENDIAN_4(msgPtr->target.offset);
-  if(logging) syslog(LOG_INFO, "NTLM: Target offset is %d", datal);
+  if(logging) syslog(LOG_NOTICE, "NTLM: Target offset is %d", datal);
   
   datal = LITTLE_ENDIAN_4(msgPtr->flags);
   if(logging)
   {
     if(datal & NTLM_FLAG_NEGOTIATE_UNICODE)
-      syslog(LOG_INFO, "NTLM Flag: Negotiate Unicode");
+      syslog(LOG_NOTICE, "NTLM Flag: Negotiate Unicode");
     if(datal & NTLM_FLAG_NEGOTIATE_OEM)
-      syslog(LOG_INFO, "NTLM Flag: Negotiate OEM");
+      syslog(LOG_NOTICE, "NTLM Flag: Negotiate OEM");
     if(datal & NTLM_FLAG_REQUEST_TARGET)
-      syslog(LOG_INFO, "NTLM Flag: Request Target");
+      syslog(LOG_NOTICE, "NTLM Flag: Request Target");
     if(datal & NTLM_FLAG_UNKNOWN1)
-      syslog(LOG_INFO, "NTLM Flag: Unknown1");
+      syslog(LOG_NOTICE, "NTLM Flag: Unknown1");
     if(datal & NTLM_FLAG_NEGOTIATE_SIGN)
-      syslog(LOG_INFO, "NTLM Flag: Negotiate Sign");
+      syslog(LOG_NOTICE, "NTLM Flag: Negotiate Sign");
     if(datal & NTLM_FLAG_NEGOTIATE_SEAL)
-      syslog(LOG_INFO, "NTLM Flag: Negotiate Seal");
+      syslog(LOG_NOTICE, "NTLM Flag: Negotiate Seal");
     if(datal & NTLM_FLAG_NEGOTIATE_DATAGRAM_STYLE)
-      syslog(LOG_INFO, "NTLM Flag: Negotiate Datagram Style");
+      syslog(LOG_NOTICE, "NTLM Flag: Negotiate Datagram Style");
     if(datal & NTLM_FLAG_NEGOTIATE_LAN_MANAGER_KEY)
-      syslog(LOG_INFO, "NTLM Flag: Negotiate LAN Manager Key");
+      syslog(LOG_NOTICE, "NTLM Flag: Negotiate LAN Manager Key");
     if(datal & NTLM_FLAG_NEGOTIATE_NETWARE)
-      syslog(LOG_INFO, "NTLM Flag: Negotiate Netware");
+      syslog(LOG_NOTICE, "NTLM Flag: Negotiate Netware");
     if(datal & NTLM_FLAG_NEGOTIATE_NTLM)
-      syslog(LOG_INFO, "NTLM Flag: Negotiate NTLM");
+      syslog(LOG_NOTICE, "NTLM Flag: Negotiate NTLM");
     if(datal & NTLM_FLAG_UNKNOWN2)
-      syslog(LOG_INFO, "NTLM Flag: Unknown2");
+      syslog(LOG_NOTICE, "NTLM Flag: Unknown2");
     if(datal & NTLM_FLAG_UNKNOWN3)
-      syslog(LOG_INFO, "NTLM Flag: Unknown3");
+      syslog(LOG_NOTICE, "NTLM Flag: Unknown3");
     if(datal & NTLM_FLAG_NEGOTIATE_DOMAIN_SUPPLIED)
-      syslog(LOG_INFO, "NTLM Flag: Negotiate Domain Supplied");
+      syslog(LOG_NOTICE, "NTLM Flag: Negotiate Domain Supplied");
     if(datal & NTLM_FLAG_NEGOTIATE_WORKSTATION_SUPPLIED)
-      syslog(LOG_INFO, "NTLM Flag: Negotiate Workstation Supplied");
+      syslog(LOG_NOTICE, "NTLM Flag: Negotiate Workstation Supplied");
     if(datal & NTLM_FLAG_NEGOTIATE_LOCAL_CALL)
-      syslog(LOG_INFO, "NTLM Flag: Negotiate Local Call");
+      syslog(LOG_NOTICE, "NTLM Flag: Negotiate Local Call");
     if(datal & NTLM_FLAG_NEGOTIATE_ALWAYS_SIGN)
-      syslog(LOG_INFO, "NTLM Flag: Negotiate Always Sign");
+      syslog(LOG_NOTICE, "NTLM Flag: Negotiate Always Sign");
     if(datal & NTLM_FLAG_TARGET_TYPE_DOMAIN)
-      syslog(LOG_INFO, "NTLM Flag: Target Type Domain");
+      syslog(LOG_NOTICE, "NTLM Flag: Target Type Domain");
     if(datal & NTLM_FLAG_TARGET_TYPE_SERVER)
-      syslog(LOG_INFO, "NTLM Flag: Target Type Server");
+      syslog(LOG_NOTICE, "NTLM Flag: Target Type Server");
     if(datal & NTLM_FLAG_TARGET_TYPE_SHARE)
-      syslog(LOG_INFO, "NTLM Flag: Target Type Share");
+      syslog(LOG_NOTICE, "NTLM Flag: Target Type Share");
     if(datal & NTLM_FLAG_NEGOTIATE_NTLM2_KEY)
-      syslog(LOG_INFO, "NTLM Flag: Negotiate NTLM2 Key");
+      syslog(LOG_NOTICE, "NTLM Flag: Negotiate NTLM2 Key");
     if(datal & NTLM_FLAG_REQUEST_INIT_RESPONSE)
-      syslog(LOG_INFO, "NTLM Flag: Request Init Response");
+      syslog(LOG_NOTICE, "NTLM Flag: Request Init Response");
     if(datal & NTLM_FLAG_REQUEST_ACCEPT_RESPONSE)
-      syslog(LOG_INFO, "NTLM Flag: Request Accept Response");
+      syslog(LOG_NOTICE, "NTLM Flag: Request Accept Response");
     if(datal & NTLM_FLAG_REQUEST_NON_NT_SESSION_KEY)
-      syslog(LOG_INFO, "NTLM Flag: Request Non-NT Session Key");
+      syslog(LOG_NOTICE, "NTLM Flag: Request Non-NT Session Key");
     if(datal & NTLM_FLAG_NEGOTIATE_TARGET_INFO)
-      syslog(LOG_INFO, "NTLM Flag: Negotiate Target Info");
+      syslog(LOG_NOTICE, "NTLM Flag: Negotiate Target Info");
     if(datal & NTLM_FLAG_UNKNOWN4)
-      syslog(LOG_INFO, "NTLM Flag: UNKNOWN4");
+      syslog(LOG_NOTICE, "NTLM Flag: UNKNOWN4");
     if(datal & NTLM_FLAG_UNKNOWN5)
-      syslog(LOG_INFO, "NTLM Flag: UNKNOWN5");
+      syslog(LOG_NOTICE, "NTLM Flag: UNKNOWN5");
     if(datal & NTLM_FLAG_UNKNOWN6)
-      syslog(LOG_INFO, "NTLM Flag: UNKNOWN6");
+      syslog(LOG_NOTICE, "NTLM Flag: UNKNOWN6");
     if(datal & NTLM_FLAG_UNKNOWN7)
-      syslog(LOG_INFO, "NTLM Flag: UNKNOWN7");
+      syslog(LOG_NOTICE, "NTLM Flag: UNKNOWN7");
     if(datal & NTLM_FLAG_UNKNOWN8)
-      syslog(LOG_INFO, "NTLM Flag: UNKNOWN8");
+      syslog(LOG_NOTICE, "NTLM Flag: UNKNOWN8");
     if(datal & NTLM_FLAG_NEGOTIATE_128)
-      syslog(LOG_INFO, "NTLM Flag: Negotiate 128");
+      syslog(LOG_NOTICE, "NTLM Flag: Negotiate 128");
     if(datal & NTLM_FLAG_NEGOTIATE_KEY_EXCHANGE)
-      syslog(LOG_INFO, "NTLM Flag: Negotiate Key Exchange");
+      syslog(LOG_NOTICE, "NTLM Flag: Negotiate Key Exchange");
     if(datal & NTLM_FLAG_NEGOTIATE_56)
-      syslog(LOG_INFO, "NTLM Flag: Negotiate 56");
+      syslog(LOG_NOTICE, "NTLM Flag: Negotiate 56");
   }
   *nonce = (char*)malloc(8);
   int i;
@@ -892,18 +892,18 @@ int establishNTLMParseType2String(char *authString, int authStringSize, char **n
         target[i]='^';
     target[len]='\0';
     if(logging)
-      syslog(LOG_INFO, "NTLM: Target is: %s", target);
+      syslog(LOG_NOTICE, "NTLM: Target is: %s", target);
   }
   
   datal = LITTLE_ENDIAN_4(msgPtr->flags);
   if(datal & NTLM_FLAG_NEGOTIATE_TARGET_INFO) //have a look at the target information buffer
   {
     datas = LITTLE_ENDIAN_2(msgPtr->targetInfo.length);
-    if(logging) syslog(LOG_INFO, "NTLM: Target length is %d", datas);
+    if(logging) syslog(LOG_NOTICE, "NTLM: Target length is %d", datas);
     datas = LITTLE_ENDIAN_2(msgPtr->targetInfo.length2);
-    if(logging) syslog(LOG_INFO, "NTLM: Target length 2 is %d", datas);
+    if(logging) syslog(LOG_NOTICE, "NTLM: Target length 2 is %d", datas);
     datal = LITTLE_ENDIAN_4(msgPtr->targetInfo.offset);
-    if(logging) syslog(LOG_INFO, "NTLM: Target offset is %d", datal);
+    if(logging) syslog(LOG_NOTICE, "NTLM: Target offset is %d", datal);
     
     if(LITTLE_ENDIAN_2(msgPtr->targetInfo.length))  //well, there appears to be something there. Better print it out I guess
     {
@@ -916,7 +916,7 @@ int establishNTLMParseType2String(char *authString, int authStringSize, char **n
           targetInfo[i]='^';
       targetInfo[len]='\0';
       if(logging)
-        syslog(LOG_INFO, "NTLM: TargetInfo is: %s", targetInfo);
+        syslog(LOG_NOTICE, "NTLM: TargetInfo is: %s", targetInfo);
     }
   }
   
@@ -948,7 +948,7 @@ int establishNTLMParseType2StringBase64(char *authString, int authStringSize, ch
 //	allocate memory to, and return the Type 3 NTLM authorization string in authString and its size in authStringSize
 //
 //**************************************************************************
-int establishNTLMGetType3String(char **authString, int *authStringSize, const char *username, const char *password, const char *host, const char *domain, const char *nonce)
+int establishNTLMGetType3String(char **authString, int *authStringSize, const char *username, const char *password, const char *host, const char *domain, const unsigned char *nonce)
 {
   int i, userLen = strlen(username), hostLen = strlen(domain), domLen = strlen(domain); 
   struct type3Message msg;
@@ -1029,7 +1029,7 @@ int establishNTLMGetType3String(char **authString, int *authStringSize, const ch
 //	return the base64 version of the Type 3 message
 //
 //**************************************************************************
-int establishNTLMGetType3StringBase64(char **authString, int *authStringSize, const char *username, const char *password, const char *host, const char *domain, const char *nonce)
+int establishNTLMGetType3StringBase64(char **authString, int *authStringSize, const char *username, const char *password, const char *host, const char *domain, const unsigned char *nonce)
 {
   if(establishNTLMGetType3String(authString, authStringSize, username, password, host, domain, nonce))
     return 1;
@@ -1047,50 +1047,53 @@ int establishNTLMGetType3StringBase64(char **authString, int *authStringSize, co
 //	returns the LM and NT hashed password in response
 //
 //**************************************************************************
-int establishNTLMGetHashedPassword(char **response, const char *password, const char *nonce)
+//ex-nested function
+/*
+ * turns a 56 bit key into the 64 bit, odd parity key and sets the key.
+ * The key schedule ks is also set.
+ */
+void SetupDESKey(unsigned char key56[], des_key_schedule ks)
 {
-  /*
-   * turns a 56 bit key into the 64 bit, odd parity key and sets the key.
-   * The key schedule ks is also set.
-   */
-  void SetupDESKey(unsigned char key56[], des_key_schedule ks)
-  {
-    des_cblock key;
-    
-    key[0] = key56[0];
-    key[1] = ((key56[0] << 7) & 0xFF) | (key56[1] >> 1);
-    key[2] = ((key56[1] << 6) & 0xFF) | (key56[2] >> 2);
-    key[3] = ((key56[2] << 5) & 0xFF) | (key56[3] >> 3);
-    key[4] = ((key56[3] << 4) & 0xFF) | (key56[4] >> 4);
-    key[5] = ((key56[4] << 3) & 0xFF) | (key56[5] >> 5);
-    key[6] = ((key56[5] << 2) & 0xFF) | (key56[6] >> 6);
-    key[7] =  (key56[6] << 1) & 0xFF;
-    
-    des_set_odd_parity(&key);
-    des_set_key(&key, ks);
-  };
+  des_cblock key;
+  
+  key[0] = key56[0];
+  key[1] = ((key56[0] << 7) & 0xFF) | (key56[1] >> 1);
+  key[2] = ((key56[1] << 6) & 0xFF) | (key56[2] >> 2);
+  key[3] = ((key56[2] << 5) & 0xFF) | (key56[3] >> 3);
+  key[4] = ((key56[3] << 4) & 0xFF) | (key56[4] >> 4);
+  key[5] = ((key56[4] << 3) & 0xFF) | (key56[5] >> 5);
+  key[6] = ((key56[5] << 2) & 0xFF) | (key56[6] >> 6);
+  key[7] =  (key56[6] << 1) & 0xFF;
+  
+  des_set_odd_parity(&key);
+  des_set_key(&key, ks);
+};
 
-  /*
-   * takes a 21 byte array and treats it as 3 56-bit DES keys. The
-   * 8 byte plaintext is encrypted with each key and the resulting 24
-   * bytes are stored in the results array.
-   */
-  void CalculateResponse(unsigned char *keys, const unsigned char *plaintext, unsigned char *results)
-  {
-    des_key_schedule ks;
-    
-    SetupDESKey(keys, ks);
-    des_ecb_encrypt((des_cblock*)plaintext, (des_cblock*)results, ks, DES_ENCRYPT);
-    
-    SetupDESKey(&keys[7], ks);
-    des_ecb_encrypt((des_cblock*)plaintext, (des_cblock*)(&results[8]), ks, DES_ENCRYPT);
-    
-    SetupDESKey(&keys[14], ks);
-    des_ecb_encrypt((des_cblock*)plaintext, (des_cblock*)(&results[16]), ks, DES_ENCRYPT);
-  };  
+//ex-nested function 2
+/*
+ * takes a 21 byte array and treats it as 3 56-bit DES keys. The
+ * 8 byte plaintext is encrypted with each key and the resulting 24
+ * bytes are stored in the results array.
+ */
+void CalculateResponse(unsigned char *keys, const unsigned char *plaintext, unsigned char *results)
+{
+  des_key_schedule ks;
+  
+  SetupDESKey(keys, ks);
+  des_ecb_encrypt((des_cblock*)plaintext, (des_cblock*)results, ks, DES_ENCRYPT);
+  
+  SetupDESKey(&keys[7], ks);
+  des_ecb_encrypt((des_cblock*)plaintext, (des_cblock*)(&results[8]), ks, DES_ENCRYPT);
+  
+  SetupDESKey(&keys[14], ks);
+  des_ecb_encrypt((des_cblock*)plaintext, (des_cblock*)(&results[16]), ks, DES_ENCRYPT);
+};  
 
+//actual function
+int establishNTLMGetHashedPassword(char **response, const char *password, const unsigned char *nonce)
+{
   //firstly, the Lan Manager password
-  char LMPassword[14];
+  unsigned char LMPassword[14];
   int passLen = strlen(password);
   
   int i;

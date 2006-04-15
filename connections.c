@@ -39,7 +39,7 @@ int conductSession(int clientConnection, char authStr[], int serverSocket, char 
     if(establishNTLMAuthentication(clientConnection, &serverSocket, logging, theNTLMSettings))
       return -1;
     else if(logging)
-      syslog(LOG_INFO, "Finished NTLM!");
+      syslog(LOG_NOTICE, "Finished NTLM!");
   }
   
   pid_t pid;
@@ -55,14 +55,14 @@ int conductSession(int clientConnection, char authStr[], int serverSocket, char 
            conductClientSideDirectly(clientConnection, serverSocket, logging)) < 0)
       {
         if(logging)
-          syslog(LOG_INFO, "Client closed ungracefully. Killing session processes.");
+          syslog(LOG_NOTICE, "Client closed ungracefully. Killing session processes.");
         kill(getppid(), SIGKILL);
         exit(EXIT_FAILURE);
       }
       else
       {
         if(logging)
-          syslog(LOG_INFO, "Client closed connection, killing session processes.");
+          syslog(LOG_NOTICE, "Client closed connection, killing session processes.");
         kill(getppid(), SIGKILL);	//the client closed the connection, so kill the server connection as well
         exit(EXIT_SUCCESS);
       }
@@ -71,14 +71,14 @@ int conductSession(int clientConnection, char authStr[], int serverSocket, char 
       if (conductServerSide(clientConnection, serverSocket, logging) < 0)
       {
         if(logging)
-          syslog(LOG_INFO, "Server closed ungracefully. Killing session processes.");
+          syslog(LOG_NOTICE, "Server closed ungracefully. Killing session processes.");
         kill(pid, SIGKILL);
         exit(EXIT_FAILURE);
       }
       else
       {
         if(logging)
-          syslog(LOG_INFO, "Server closed connection, killing session processes.");
+          syslog(LOG_NOTICE, "Server closed connection, killing session processes.");
         kill(pid, SIGKILL);	//the server closed the connection, so kill the client connection as well
         exit(EXIT_SUCCESS);
       }      
@@ -97,7 +97,7 @@ int conductSession(int clientConnection, char authStr[], int serverSocket, char 
 int handleConnection(int clientSocket)
 {
   int connection;
-  int sinSize = sizeof(struct sockaddr_in);
+  unsigned int sinSize = sizeof(struct sockaddr_in);
   struct sockaddr_in clientAddr;
   
   if((connection = accept(clientSocket, (struct sockaddr*) &clientAddr, &sinSize)) < 0)		//wait for connection
@@ -107,8 +107,8 @@ int handleConnection(int clientSocket)
   }
   else
   {
-    //syslog(LOG_INFO, "Accepted connection from:");
-    //syslog(LOG_INFO, inet_ntoa(clientAddr.sin_addr));
+    //syslog(LOG_NOTICE, "Accepted connection from:");
+    //syslog(LOG_NOTICE, inet_ntoa(clientAddr.sin_addr));
     return connection;
   }
 }
@@ -167,7 +167,7 @@ int establishServerSide(char *hostname, unsigned short portnum)
 //	socket and bind to the client
 //
 //**************************************************************************
-int establishClientSide(int port, int maxpend)
+int establishClientSide(int port, int maxpend, char external)
 {
   int listenSocket;
   struct sockaddr_in listenSockAddr;
@@ -182,7 +182,7 @@ int establishClientSide(int port, int maxpend)
   memset(&listenSockAddr, 0, sizeof(struct sockaddr_in));	//clear the struct
   listenSockAddr.sin_family = AF_INET;
   listenSockAddr.sin_port = htons(port);
-  listenSockAddr.sin_addr.s_addr = inet_addr("127.0.0.1");  //change to "= INADDR_ANY" to allow outside connections
+  listenSockAddr.sin_addr.s_addr = external ? INADDR_ANY : inet_addr("127.0.0.1");
 
   // lose the pesky "Address already in use" error message
   if (setsockopt(listenSocket,SOL_SOCKET,SO_REUSEADDR,&yes,sizeof(int)) == -1)
@@ -239,7 +239,7 @@ int conductClientSide(int clientConnection, char authStr[], int serverSocket, ch
          )//list of headers above from RFC2616, pg 24
         endHeader=0; //looks like a new header
 
-//      syslog(LOG_INFO, "just recv'ed");      
+//      syslog(LOG_NOTICE, "just recv'ed");      
       //Right, we've got some data, check to see if it has a CRLFCRLF
       if(!endHeader)
       {
@@ -296,7 +296,7 @@ int conductClientSide(int clientConnection, char authStr[], int serverSocket, ch
           }
           debugBuf[i] = '\0';
           if(i>4)
-            syslog(LOG_INFO, debugBuf);
+            syslog(LOG_NOTICE, debugBuf);
         }
       }
       
@@ -309,11 +309,11 @@ int conductClientSide(int clientConnection, char authStr[], int serverSocket, ch
       {
         if((bytesSent += send(serverSocket, &listenBuf[bytesSent], recvBufSize-bytesSent, 0)) < 0)
         {
-          syslog(LOG_INFO, "Couldn't send to talk connection. Errno: %m");
+          syslog(LOG_NOTICE, "Couldn't send to talk connection. Errno: %m");
           return -1;
         }
-//      syslog(LOG_INFO, "just sent this");
-//      syslog(LOG_INFO, listenBuf);
+//      syslog(LOG_NOTICE, "just sent this");
+//      syslog(LOG_NOTICE, listenBuf);
       }
       
     }
@@ -324,19 +324,19 @@ int conductClientSide(int clientConnection, char authStr[], int serverSocket, ch
     {
       if(errno==54) //that's the connection reset by peer error. Strangely, IE seems to do it all the time. I can't see why. RFC2616, Ch8.1 has the details on persistent connections, and I can't see why the connection wouldn't be dropped gracefully instead of this 'forceful drop by the server' we see.
       {
-//          syslog(LOG_INFO, "Connection reset by peer, closing connection.");
+//          syslog(LOG_NOTICE, "Connection reset by peer, closing connection.");
         close(clientConnection);
         close(serverSocket);
       }
       else
-        syslog(LOG_INFO, "Odd packet received. Ignoring. Errno: %m");
+        syslog(LOG_NOTICE, "Odd packet received. Ignoring. Errno: %m");
       
       return -1;
     }
     
     if(connectionClosed)
     {
-//      syslog(LOG_INFO, "Connection closed by client.");
+//      syslog(LOG_NOTICE, "Connection closed by client.");
     
       close(clientConnection);
       close(serverSocket);
@@ -358,7 +358,7 @@ int conductClientSideDirectly(int clientConnection, int serverSocket, char loggi
   char listenBuf[INCOMING_BUF_SIZE+1];
 
   if(logging)
-    syslog(LOG_INFO, "Handling a direct connection");
+    syslog(LOG_NOTICE, "Handling a direct connection");
   
   while((recvBufSize = recv(clientConnection, listenBuf, INCOMING_BUF_SIZE, 0)) > 0)  //retrieve the data on the listen socket
   {
@@ -396,7 +396,7 @@ int conductClientSideDirectly(int clientConnection, int serverSocket, char loggi
       if((bytesSent += send(serverSocket, &listenBuf[bytesSent], recvBufSize-bytesSent, 0)) < 0)
       {
         if(logging)
-          syslog(LOG_INFO, "Couldn't send direct to server. Errno: %m");
+          syslog(LOG_NOTICE, "Couldn't send direct to server. Errno: %m");
         return -1;
       }
     }
@@ -415,7 +415,7 @@ int conductClientSideDirectly(int clientConnection, int serverSocket, char loggi
       close(serverSocket);
     }
     else if(logging)
-      syslog(LOG_INFO, "Odd packet received direct from server. Ignoring. Errno: %m");
+      syslog(LOG_NOTICE, "Odd packet received direct from server. Ignoring. Errno: %m");
     
     return -1;
   }
@@ -438,16 +438,16 @@ int conductServerSide(int clientConnection, int serverSocket, char logging)
     {
       int sentChars=0;
 //      listenBuf[recvBufSize] = '\0';
-//      syslog(LOG_INFO, "About to send back data");
-//      syslog(LOG_INFO, listenBuf);
+//      syslog(LOG_NOTICE, "About to send back data");
+//      syslog(LOG_NOTICE, listenBuf);
       while(sentChars<recvBufSize)
       {
         if((sentChars+=send(clientConnection, &listenBuf[sentChars], recvBufSize-sentChars, 0)) < 0)
         {
           if(logging)
           {
-            syslog(LOG_INFO, "Couldn't send to listen connection. Errno: %m");
-//            syslog(LOG_INFO, strerror(errno));
+            syslog(LOG_NOTICE, "Couldn't send to listen connection. Errno: %m");
+//            syslog(LOG_NOTICE, strerror(errno));
           }
           close(serverSocket);
           close(clientConnection);
@@ -460,15 +460,15 @@ int conductServerSide(int clientConnection, int serverSocket, char logging)
     {
       if(logging)
       {
-        syslog(LOG_INFO, "Unexpected closure of server socket. Errno: %m");
-//        syslog(LOG_INFO, strerror(errno));
+        syslog(LOG_NOTICE, "Unexpected closure of server socket. Errno: %m");
+//        syslog(LOG_NOTICE, strerror(errno));
       }
       close(serverSocket);
       close(clientConnection);
       return -1;
     }
     
-//    syslog(LOG_INFO, "Connection closed by server.");
+//    syslog(LOG_NOTICE, "Connection closed by server.");
     close(serverSocket);
     close(clientConnection);
     return 0;
