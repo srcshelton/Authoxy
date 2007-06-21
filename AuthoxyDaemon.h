@@ -46,6 +46,9 @@
 
 #include <openssl/des.h>
 
+#include <sys/types.h>
+#include <sys/stat.h>
+
 #define XP_UNIX
 #define JSFILE
 #include "jsapi.h"

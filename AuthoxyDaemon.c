@@ -40,20 +40,28 @@ int main(int argc, char* argv[])
     usingNTLM=1;
   else
   {
-    syslog(LOG_ERR, "Fatal Error: authoxyd needs either 7 or 9 command line parameters. Check there are no spaces in your settings.");
+    syslog(LOG_ERR, "Fatal Error: incorrect argument count for authoxyd. Ensure there are no old copies of Authoxy installed.");
     return 1;
   }
 
   signal(SIGCHLD, fireman);
   daemon(0, 0);
   //write our new PID to file (since it will be different to the one we started with)
+  mode_t oldMask = umask(0);  //set new file mode to 0666 (read/write by everyone)
   FILE *f = fopen(AUTHOXYD_PID_PATH, "w");
-  fprintf(f, "%d", getpid());
-  fclose(f);
+  if(f)
+  {
+    fprintf(f, "%d", getpid());
+    fclose(f);    
+  }
   //also write the port we are using to a file
   f = fopen(AUTHOXYD_PORT_PATH, "w");
-  fprintf(f, "%d", ARG_LPORT);
-  fclose(f);
+  if(f)
+  {
+    fprintf(f, "%d", ARG_LPORT);
+    fclose(f);    
+  }
+  umask(oldMask); //set it back
   
   struct NTLMSettings theNTLMSettings;
 

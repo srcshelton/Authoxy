@@ -1,6 +1,7 @@
-{\rtf1\mac\ansicpg10000\cocoartf102
+{\rtf1\mac\ansicpg10000\cocoartf824\cocoasubrtf410
 {\fonttbl\f0\fswiss\fcharset77 Helvetica;\f1\fswiss\fcharset77 Helvetica-Bold;}
 {\colortbl;\red255\green255\blue255;}
+\vieww14540\viewh13180\viewkind0
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\ql\qnatural
 
 \f0\fs48 \cf0 Authoxy
@@ -68,34 +69,23 @@ You can keep an eye on the status text in the preference pane, which should chan
 
 \f1\b \ul What if it doesn't work?
 \f0\b0 \ulnone \
-Bummer. Authoxy has improved a great deal, and works fine on my computer, but I can only test it on my setup. That's why I appreciate any feedback you can provide.\
+Bummer. Authoxy has improved a great deal, but testing for the unlimited configurations in the real world is impossible. That's why I appreciate any feedback you can provide.\
 \
 First check the messages tab in Authoxy's preference pane. Authoxy occasionally writes error messages there. Also check the support page at <http://www.hrsoftworks.net/support.html>. That page gets updated with problems which surface after Authoxy is released.\
 \
-Authoxy does not work for all authentication schemes. In fact, it only supports the 'Basic:' method, which is common in the Squid proxy and others. If your proxy requires Digest or Kerberos authentication, write to me and request it. If your proxy requires NTLM, try the new NTLM support.\
+Authoxy does not work for all authentication schemes. In fact, it only supports the 'Basic:' (very common in Squid proxies and others)  and the NTLM method (common in Microsoft proxies). If your proxy requires Digest or Kerberos authentication, write to me and request it. \
 \
-Important: Authoxy's source code is available for free! Please, if you have any coding skill yourself, or know someone who could lend their time, the *best* way to add a feature or fix a bug would be to do it yourself! You'll be able to compile the code yourself and take advantage of your changes, and best of all, improvements will be added to the source tree I use to make the next official release of Authoxy.\
-\
-
-\f1\b \ul Future versions:
-\f0\b0 \ulnone \
-Future work on my behalf will be mainly limited to bug fixes. Most of my time is being moved to other projects. But that does not mean the end of Authoxy! Authoxy is now available as open source. I now rely on the open source community to improve the code. I'll continue to review the code, and if worthwhile changes are made, I'll compile them and package them up into official releases.\
+Other errors are certainly possible. With your help, I will be able to fix them, and continue to improve Authoxy.\
 \
 
 \f1\b \ul Legal Crap:
 \f0\b0 \ulnone \
-I wrote Authoxy, which I reckon entitles me to copyright. You are free to pass it on to whomever you like, as long as this ReadMe goes with it. I hereby disclaim any blame for breaking anything, you use this software at your own risk. I think it is very safe, and use it full time on my computer.\
-\
-The source code is available under the GNU General Public License. Refer to http://http://www.gnu.org/licenses/licenses.html#GPL or the COPYING file in this distribution for the license.\
-\
-The Javascript engine, Spidermonkey, used by Authoxy is released under the Mozilla Public License: http://www.mozilla.org/MPL/\
-\
-The MD4 message-digest algorithm used by Authoxy is Copyright 1990-2, RSA Data Security, Inc. The License appears in the relevant source code files.\
+I wrote Authoxy, which I reckon entitles me to copyright. You are free to pass it on to whomever you like, as long as this ReadMe goes with it! I hereby disclaim any blame for breaking anything, you use this software at your own risk. I think it is very safe.\
 \
 
-\f1\b \ul Pricing
+\f1\b \ul Pricing / Licensing
 \f0\b0 \ulnone \
-Authoxy takes some time to support. Sadly, I can no longer afford the time for free. I will not cripple Authoxy, and you are welcome to trial it for free, but if you find it useful, or want support from me, I would (as a poor student!) most appreciate some compensation. My pricing scheme follows (all prices in US dollars, despite me not living in that country, since it seems to suit the majority of users):\
+Authoxy takes some time to support. Sadly, I can no longer afford the time for free. I will not cripple Authoxy, and you are welcome to trial it for free, but if you find it useful, or want support from me, I would appreciate some compensation. My pricing scheme follows (all prices in US dollars, despite me not living in that country, since it seems to suit the majority of users):\
 \
 Student or education user:	$US5\
 Private User:			$US10\
@@ -110,7 +100,7 @@ Site:				https://www.paypal.com/xclick/business=hraftery%40myrealbox.com&item_na
 
 \f1\b \ul Contact:
 \f0\b0 \ulnone \
-Please consider using the HRSoftWorks-Discuss mailing list for any correspondence. Regrettably, I can no longer afford the time to reply to every email individually, and using the list would cut down my workload considerably. You can subscribe to the lists at <http://www.hrsoftworks.net>.\
+Please consider using the HRSoftWorks-Discuss mailing list for any correspondence. Regrettably, I can no longer afford the time to reply to every email individually, and using the list would cut down my workload considerably, which means more development for Authoxy! You can subscribe to the lists at <http://www.hrsoftworks.net>.\
 \
 Heath Raftery\
 heath@hrsoftworks.net\
@@ -120,6 +110,31 @@ HRSoftWorks\
 
 \f1\b \ul Change log:
 \f0\b0 \ulnone \
+\
+V3.3\
+* Fixed some niggling issues with the move to Universal Binary\
+* Improved the error reporting when old versions of Authoxy are installed.\
+* Slight cosmetic improvements.\
+* Brought startAuthoxy up to version parity.\
+* Fixed file permissions and error handling issues with pid and port temp files.\
+\
+V3.2.5\
+* Improved use of external libraries, improving platform support and connection behaviour.\
+* Added the ability to allow connections to Authoxy from other computers. Off by default for security reasons.\
+* Changed the logging level from Informational to Notice, to avoid automatic pruning by syslog.\
+\
+V3.2\
+* Updated to latest library versions.\
+* Authoxy and the associated daemon are now Universal Binaries! That means they'll run on the new Intel Macs as well as the old PPC based Macs.\
+\
+V3.1.2\
+* startAuthoxy's method of determining the PID of the new Authoxy daemon has been updated to reflect the new behaviour where the daemon reports the PID via a tmp file.\
+* Added a textual hint about the fact that changes will not take effect until the daemon is started and stopped.\
+* Implemented a check which avoids parsing the system log if it is so large that parsing could cause problems.\
+* The Authoxy interface now notices when it has probably lost touch with the daemon, and if so, attempts to kill it with a killall call. If this is successful, a new one can be started and the connection restored.\
+* In the NTLM authentication process, we no longer wait for the server to close the connection after step two. Instead the traffic is monitored and the connection closure initiated from the client end. This has helped in some situations were the server has failed to close the connection.\
+* While the NTLM changes were being made, a couple of small performance increases were implemented in the connection handling routines.\
+* Increased the internal connection buffer size from 1024 bytes to 2048 bytes. Now a full Ethernet packet (typically 1514 bytes) can fit in the buffer, and another 1k really isn't a big memory hit.\
 \
 V3.1.1\
 * Restored support for CONNECT requests so secure and HTTPS sites work again. Only the CONNECT header allows the Request-URI to be just the "authority".\

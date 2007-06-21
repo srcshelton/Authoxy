@@ -17,7 +17,7 @@
 	<key>CFBundleSignature</key>
 	<string>Auth</string>
 	<key>CFBundleVersion</key>
-	<string>3.2.5</string>
+	<string>3.3</string>
 	<key>NSMainNibFile</key>
 	<string>Authoxy_PantherPref</string>
 	<key>NSPrefPaneIconFile</key>

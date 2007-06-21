@@ -142,6 +142,8 @@
         [NSString stringWithString:
           (CFBooleanGetValue(CFPreferencesCopyAppValue(CFSTR(AP_Logging), appID)) ? @"true" : @"false")],
         @"true",	//use auto config
+        [NSString stringWithString:
+          (CFBooleanGetValue(CFPreferencesCopyAppValue(CFSTR(AP_ExternalConnections), appID)) ? @"true" : @"false")],
         nil];
     }
     else
@@ -154,10 +156,22 @@
         [NSString stringWithString:
           (CFBooleanGetValue(CFPreferencesCopyAppValue(CFSTR(AP_Logging), appID)) ? @"true" : @"false")],
         @"false",	//no auto config here
+        [NSString stringWithString:
+          (CFBooleanGetValue(CFPreferencesCopyAppValue(CFSTR(AP_ExternalConnections), appID)) ? @"true" : @"false")],
         nil];
     }
-  
-    return args;
+    
+    if(CFBooleanGetValue(CFPreferencesCopyAppValue(CFSTR(AP_NTLM), appID)))
+    {
+      NSArray *argsNTLM = [args arrayByAddingObjectsFromArray:[NSArray arrayWithObjects:
+        (NSString*)CFPreferencesCopyAppValue(CFSTR(AP_NTLM_Domain), appID), //add Domain and Host settings if using NTLM
+        (NSString*)CFPreferencesCopyAppValue(CFSTR(AP_NTLM_Host), appID),
+        nil]];
+      
+      return argsNTLM;
+    }
+    else
+      return args;    
   }
   else
     return NULL;
