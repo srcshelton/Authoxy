@@ -228,12 +228,6 @@
   if([statusTimer respondsToSelector:@selector(setFireDate:)])
     if([statusTimer isValid])
       [statusTimer setFireDate:[NSDate dateWithTimeIntervalSinceNow:1]];
-  
-  //reset status of Option key
-  bOptionKeyIsDown = [[NSApp currentEvent] modifierFlags] & NSAlternateKeyMask;
-  
-  [[[self mainView] window] makeFirstResponder:fUsername];
-  
 }
 
 /**************************************************************/
