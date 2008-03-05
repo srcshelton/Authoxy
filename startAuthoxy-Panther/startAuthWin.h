@@ -44,4 +44,8 @@
 #define BUTTON_OK     1
 #define BUTTON_CANCEL 2
 
+#define ARGUMENT_NO_LOGGING @"0"
+#define ARGUMENT_LOGGING    @"1"
+#define ARGUMENT_TESTING    @"2"
+
 @end

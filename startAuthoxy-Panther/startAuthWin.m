@@ -140,7 +140,7 @@
         (NSString*)CFPreferencesCopyAppValue(CFSTR(AP_RemotePort), appID),
         (NSString*)CFPreferencesCopyAppValue(CFSTR(AP_LocalPort), appID),
         [NSString stringWithString:
-          (CFBooleanGetValue(CFPreferencesCopyAppValue(CFSTR(AP_Logging), appID)) ? @"true" : @"false")],
+          (CFBooleanGetValue(CFPreferencesCopyAppValue(CFSTR(AP_Logging), appID)) ? ARGUMENT_LOGGING : ARGUMENT_NO_LOGGING)],
         @"true",	//use auto config
         [NSString stringWithString:
           (CFBooleanGetValue(CFPreferencesCopyAppValue(CFSTR(AP_ExternalConnections), appID)) ? @"true" : @"false")],
@@ -154,7 +154,7 @@
         (NSString*)CFPreferencesCopyAppValue(CFSTR(AP_RemotePort), appID),
         (NSString*)CFPreferencesCopyAppValue(CFSTR(AP_LocalPort), appID),
         [NSString stringWithString:
-          (CFBooleanGetValue(CFPreferencesCopyAppValue(CFSTR(AP_Logging), appID)) ? @"true" : @"false")],
+          (CFBooleanGetValue(CFPreferencesCopyAppValue(CFSTR(AP_Logging), appID)) ? ARGUMENT_LOGGING : ARGUMENT_NO_LOGGING)],
         @"false",	//no auto config here
         [NSString stringWithString:
           (CFBooleanGetValue(CFPreferencesCopyAppValue(CFSTR(AP_ExternalConnections), appID)) ? @"true" : @"false")],
