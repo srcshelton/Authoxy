@@ -1,34 +1,37 @@
 /*
- *  NTLM.c
- *  Authoxy
- *
- *  Created by Heath Raftery on Fri Jan 2 2004.
- *  Copyright (c) 2004 HRSoftWorks. All rights reserved.
- *
- 
- This file is part of Authoxy.
- 
- Authoxy is free software; you can redistribute it and/or modify
- it under the terms of the GNU General Public License as published by
- the Free Software Foundation; either version 2 of the License, or
- (at your option) any later version.
- 
- Authoxy is distributed in the hope that it will be useful,
- but WITHOUT ANY WARRANTY; without even the implied warranty of
- MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- GNU General Public License for more details.
- 
- You should have received a copy of the GNU General Public License
- along with Authoxy; if not, write to the Free Software
- Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+*  NTLM.c
+*  Authoxy
+*
+*  Created by Heath Raftery on Fri Jan 2 2004.
+*  Copyright (c) 2004 HRSoftWorks. All rights reserved.
+*
 
- */
+This file is part of Authoxy.
+
+Authoxy is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+Authoxy is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Authoxy; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+*/
+
+#include <libkern/OSByteOrder.h>
 
 #include "AuthoxyDaemon.h"
 #include "base64.h"
-//MD4
-#include "global.h"
-#include "md4.h"
+
+#include <openssl/md4.h>
+#include <openssl/des.h>
+
 
 //**************************************************************************
 //	establishNTLMAuthentication(int clientConnection, int serverSocket, char logging, struct NTLMSettings *theNTLMSettings)
@@ -39,7 +42,7 @@
 //  http://davenport.sourceforge.net/ntlm.html#ntlmHttpAuthentication
 //
 //**************************************************************************
-int establishNTLMAuthentication(int clientConnection, int *serverSocketPtr, char logging, struct NTLMSettings *theNTLMSettings)
+int establishNTLMAuthentication(int clientConnection, int *serverSocketPtr, int logging, struct NTLMSettings *theNTLMSettings)
 {
   int serverSocket = *serverSocketPtr;
 
@@ -63,10 +66,10 @@ int establishNTLMAuthentication(int clientConnection, int *serverSocketPtr, char
   shmData->step4Finished=0;
   shmData->step5Started=0;
   shmData->step5Finished=0;
-  
+
   if(logging)
     syslog(LOG_NOTICE, "Ready to NTLM!");
-  
+
   int requestSize=0;
   char *authenticatedRequest=NULL;
   int authHeaderSize=0;
@@ -76,13 +79,13 @@ int establishNTLMAuthentication(int clientConnection, int *serverSocketPtr, char
   char *authString=NULL;
   char *requestBuf=NULL;
   int indexForHeader=0;
-  
+
   //okay, we're going to have to break into two processes to handle both ends of the connection, client->proxy and server->proxy
   pid_t pid;
   switch(pid = fork())			//spawn a new process to handle the request
   {
     case -1:						//trouble!!
-      syslog(LOG_ERR, "Fatal Error: Unable to create new process. Errno: %m");
+      syslog(LOG_ERR, "Fatal Error. Unable to create new process: %m");
       close(clientConnection);
       exit(1);
       
@@ -98,8 +101,8 @@ int establishNTLMAuthentication(int clientConnection, int *serverSocketPtr, char
       }
       else
       {
-//        close(clientConnection);
-//        close(serverSocket);
+    //        close(clientConnection);
+    //        close(serverSocket);
         exit(EXIT_SUCCESS);
       }
 
@@ -122,7 +125,7 @@ int establishNTLMAuthentication(int clientConnection, int *serverSocketPtr, char
   switch(pid = fork())			//spawn a new process to handle the request
   {
     case -1:						//trouble!!
-      syslog(LOG_ERR, "Fatal Error: Unable to create new process. Errno: %m");
+      syslog(LOG_ERR, "Fatal Error. Unable to create new process: %m");
       close(clientConnection);
       exit(1);
       
@@ -151,11 +154,11 @@ int establishNTLMAuthentication(int clientConnection, int *serverSocketPtr, char
       else
         break;
   }
-  
+
   //now we can assume the authentication process is complete
   shmdt(shmData);
   shmctl(shmID, IPC_RMID, NULL);
-  
+
   return 0;
 }
 
@@ -165,10 +168,10 @@ int establishNTLMAuthentication(int clientConnection, int *serverSocketPtr, char
 //	called by establishNTLMAuthentication() to handle the parent process
 //
 //**************************************************************************
-int establishNTLMAuthenticationParentOne(int clientConnection, int *serverSocketPtr, char logging, int *requestSizePtr, char **authenticatedRequestPtr, int *authHeaderSizePtr, int *authStringSizePtr, char **authStringPtr, char **requestBufPtr, int *indexForHeaderPtr, int *connectionClosePtr, int *connectionCloseHeaderSizePtr, struct sharedData *shmData, struct NTLMSettings *theNTLMSettings)
+int establishNTLMAuthenticationParentOne(int clientConnection, int *serverSocketPtr, int logging, int *requestSizePtr, char **authenticatedRequestPtr, int *authHeaderSizePtr, int *authStringSizePtr, char **authStringPtr, char **requestBufPtr, int *indexForHeaderPtr, int *connectionClosePtr, int *connectionCloseHeaderSizePtr, struct sharedData *shmData, struct NTLMSettings *theNTLMSettings)
 {
   int serverSocket = *serverSocketPtr;
-  
+
   int connectionClose=0, connectionCloseHeaderSize=strlen(CONNECTION_CLOSE_HEADER);
   int recvBufSize;
   int requestSize=*requestSizePtr;
@@ -176,6 +179,7 @@ int establishNTLMAuthenticationParentOne(int clientConnection, int *serverSocket
   int endOfRequest=0, contentLength=0;
   if(logging)
     syslog(LOG_NOTICE, "Entering Step 1");
+  
   shmData->step1Started=1;
   /*****Step 1 - Client sends regular, unauthenticated request to proxy*****/
   while((recvBufSize = recv(clientConnection, listenBuf, INCOMING_BUF_SIZE, 0)) > 0)  //retrieve the data on the listen socket
@@ -183,15 +187,15 @@ int establishNTLMAuthenticationParentOne(int clientConnection, int *serverSocket
     if(requestBuf)
     {
       char *tempBuf = (char*)malloc(requestSize+recvBufSize);
-      bufcpy(tempBuf, requestBuf, requestSize);
+      memcpy(tempBuf, requestBuf, requestSize);
       free(requestBuf);
       requestBuf = tempBuf;
     }
     else
       requestBuf = (char*)malloc(recvBufSize);
-    
-    bufcat(requestBuf, requestSize, listenBuf, recvBufSize);
-    
+
+    memcpy(requestBuf + requestSize, listenBuf, recvBufSize);
+
     int i;
     for(i = (requestSize<connectionCloseHeaderSize) ? 0 : requestSize-connectionCloseHeaderSize; !connectionClose && i<requestSize+recvBufSize-connectionCloseHeaderSize-1; i++)
     {
@@ -231,18 +235,18 @@ int establishNTLMAuthenticationParentOne(int clientConnection, int *serverSocket
       }
     }
     requestSize+=recvBufSize;
-    
+
     if(endOfRequest && requestSize >= endOfRequest + contentLength)
       break;
   }
-    
+
   if(recvBufSize<0 && errno !=54) //an error, not the connection reset by peer that IE often produces, occured
   {
     if(logging)
       syslog(LOG_NOTICE, "NTLM authentication was interrupted by client. Killing session processes. Errno: %m.");
     return 1;
   }
-  
+
   //otherwise, send the request to the server
   //this used to be inside the receive loop, but has moved to here to allow changes to be made to the request.
   int bytesSent=0;
@@ -254,13 +258,15 @@ int establishNTLMAuthenticationParentOne(int clientConnection, int *serverSocket
       return 1;
     }
   }
-  
+  if(logging == TESTING)
+    logClientToServer(requestBuf, bytesSent);
+
   int indexForHeader;
   for(indexForHeader=0; indexForHeader<requestSize-1; indexForHeader++)
     if(requestBuf[indexForHeader] == CR && requestBuf[indexForHeader+1] == LF)
       break;
   indexForHeader+=2;
-  
+
   shmData->step1Finished=1;
   if(shmData->step2Finished)
   {
@@ -272,14 +278,14 @@ int establishNTLMAuthenticationParentOne(int clientConnection, int *serverSocket
     if(logging)
       syslog(LOG_NOTICE, "Waiting for Step 2");
 
-    //Pause here
-    if(raise(SIGSTOP)<0)
-    {
-      syslog(LOG_ERR, "Failed to send stop signal in Step 2. Errno: %m.");
-      return 1;
-    }
+  //Pause here
+  if(raise(SIGSTOP)<0)
+  {
+    syslog(LOG_ERR, "Failed to send stop signal in Step 2. Errno: %m.");
+    return 1;
   }
-  
+  }
+
   if(logging)
     syslog(LOG_NOTICE, "Entering Step 3");
   shmData->step3Started=1;
@@ -297,15 +303,15 @@ int establishNTLMAuthenticationParentOne(int clientConnection, int *serverSocket
   int authHeaderSize = strlen(AUTH_HEADER);
   char *authenticatedRequest = *authenticatedRequestPtr;
   authenticatedRequest = (char*)malloc(requestSize+authHeaderSize+authStringSize+2);
-  bufcpy(authenticatedRequest, requestBuf, indexForHeader);
-  bufcat(authenticatedRequest, indexForHeader,                                 AUTH_HEADER, authHeaderSize);
-  bufcat(authenticatedRequest, indexForHeader+authHeaderSize,                  authString, authStringSize);
-  bufcat(authenticatedRequest, indexForHeader+authHeaderSize+authStringSize,   CRLF, 2);
-  bufcat(authenticatedRequest, indexForHeader+authHeaderSize+authStringSize+2, &requestBuf[indexForHeader], requestSize-indexForHeader);
-  
+  memcpy(authenticatedRequest, requestBuf, indexForHeader);
+  memcpy(authenticatedRequest + indexForHeader,                                 AUTH_HEADER, authHeaderSize);
+  memcpy(authenticatedRequest + indexForHeader+authHeaderSize,                  authString, authStringSize);
+  memcpy(authenticatedRequest + indexForHeader+authHeaderSize+authStringSize,   CRLF, 2);
+  memcpy(authenticatedRequest + indexForHeader+authHeaderSize+authStringSize+2, &requestBuf[indexForHeader], requestSize-indexForHeader);
+
   if(authStringSize)
     free(authString);
-  
+
   //second, reestablish connection to server
   serverSocket = establishServerSide(NULL, 0); //connect again to the last server connected to
   *serverSocketPtr = serverSocket;
@@ -335,7 +341,7 @@ int establishNTLMAuthenticationParentOne(int clientConnection, int *serverSocket
 //	called by establishNTLMAuthentication() to handle the parent process
 //
 //**************************************************************************
-int establishNTLMAuthenticationParentTwo(int clientConnection, int serverSocket, char logging, int requestSize, char *authenticatedRequest, int authHeaderSize, int authStringSize, char *authString, char *requestBuf, int indexForHeader, int connectionClose, int connectionCloseHeaderSize, struct sharedData *shmData, struct NTLMSettings *theNTLMSettings)
+int establishNTLMAuthenticationParentTwo(int clientConnection, int serverSocket, int logging, int requestSize, char *authenticatedRequest, int authHeaderSize, int authStringSize, char *authString, char *requestBuf, int indexForHeader, int connectionClose, int connectionCloseHeaderSize, struct sharedData *shmData, struct NTLMSettings *theNTLMSettings)
 {
   int bytesSent=0;
   //thirdly, and lastly, send the request again to the proxy
@@ -347,7 +353,9 @@ int establishNTLMAuthenticationParentTwo(int clientConnection, int serverSocket,
       return 1;
     }
   }
-
+  if(logging == TESTING)
+    logClientToServer(authenticatedRequest, bytesSent);
+  
   shmData->step3Finished=1;
   if(shmData->step4Finished)
   {
@@ -370,41 +378,40 @@ int establishNTLMAuthenticationParentTwo(int clientConnection, int serverSocket,
   authStringSize=0;
 
   if(logging)
-    syslog(LOG_NOTICE, "Entering Step 5");
+  syslog(LOG_NOTICE, "Entering Step 5");
   shmData->step5Started=1;
   /*****Step 5 - Client resubmits request to proxy, with a Type 3 authorization message*****/
   unsigned char nonce[8];
-  bufcpy((char*)nonce, shmData->nonce, 8);
-  
+  memcpy((char*)nonce, shmData->nonce, 8);
+
   if(establishNTLMGetType3StringBase64(&authString, &authStringSize, theNTLMSettings->username, theNTLMSettings->password, theNTLMSettings->host, theNTLMSettings->domain, nonce))
-  {
     return 1;
-  }
+
   if(logging)
     syslog(LOG_NOTICE, "Got Type 3 msg of %d characters.", authStringSize);
   //insert the auth string into the headers
   authenticatedRequest = (char*)malloc(requestSize+authHeaderSize+authStringSize+2);
-  bufcpy(authenticatedRequest, requestBuf, indexForHeader);
-  bufcat(authenticatedRequest, indexForHeader,                                 AUTH_HEADER, authHeaderSize);
-  bufcat(authenticatedRequest, indexForHeader+authHeaderSize,                  authString, authStringSize);
-  bufcat(authenticatedRequest, indexForHeader+authHeaderSize+authStringSize,   CRLF, 2);
-  bufcat(authenticatedRequest, indexForHeader+authHeaderSize+authStringSize+2, &requestBuf[indexForHeader], requestSize-indexForHeader);
+  memcpy(authenticatedRequest, requestBuf, indexForHeader);
+  memcpy(authenticatedRequest + indexForHeader,                                 AUTH_HEADER, authHeaderSize);
+  memcpy(authenticatedRequest + indexForHeader+authHeaderSize,                  authString, authStringSize);
+  memcpy(authenticatedRequest + indexForHeader+authHeaderSize+authStringSize,   CRLF, 2);
+  memcpy(authenticatedRequest + indexForHeader+authHeaderSize+authStringSize+2, &requestBuf[indexForHeader], requestSize-indexForHeader);
   requestSize = requestSize+authHeaderSize+authStringSize+2;
-  
+
   //if necessary, put the Connection: close header back in
   if(connectionClose)
   {
     //note that we can't put it back in the same spot, because the header will have changed with the authentication stuff in.
     char *connectionCloseRequest = (char*)malloc(requestSize+connectionCloseHeaderSize+2);
-    bufcpy(connectionCloseRequest, authenticatedRequest, indexForHeader);
-    bufcat(connectionCloseRequest, indexForHeader,                              CONNECTION_CLOSE_HEADER, connectionCloseHeaderSize);
-    bufcat(connectionCloseRequest, indexForHeader+connectionCloseHeaderSize,    CRLF, 2);
-    bufcat(connectionCloseRequest, indexForHeader+connectionCloseHeaderSize+2,  &authenticatedRequest[indexForHeader], requestSize-indexForHeader);
+    memcpy(connectionCloseRequest, authenticatedRequest, indexForHeader);
+    memcpy(connectionCloseRequest + indexForHeader,                              CONNECTION_CLOSE_HEADER, connectionCloseHeaderSize);
+    memcpy(connectionCloseRequest + indexForHeader+connectionCloseHeaderSize,    CRLF, 2);
+    memcpy(connectionCloseRequest + indexForHeader+connectionCloseHeaderSize+2,  &authenticatedRequest[indexForHeader], requestSize-indexForHeader);
     free(authenticatedRequest);
     authenticatedRequest = connectionCloseRequest;
     requestSize = requestSize + connectionCloseHeaderSize+2;
   }
-  
+
   bytesSent=0;
   while(bytesSent<requestSize)
   {
@@ -414,14 +421,16 @@ int establishNTLMAuthenticationParentTwo(int clientConnection, int serverSocket,
       return 1;
     }
   }
+  if(logging == TESTING)
+    logClientToServer(authenticatedRequest, bytesSent);
 
   if(authStringSize)
     free(authString);
   free(authenticatedRequest);
   free(requestBuf);
-  
+
   shmData->step5Finished=1;
-  
+
   return 0;
 }
 
@@ -431,7 +440,7 @@ int establishNTLMAuthenticationParentTwo(int clientConnection, int serverSocket,
 //	called by establishNTLMAuthentication() to handle the child process
 //
 //**************************************************************************
-int establishNTLMAuthenticationChildOne(int clientConnection, int serverSocket, char logging)
+int establishNTLMAuthenticationChildOne(int clientConnection, int serverSocket, int logging)
 {
   struct sharedData *shmData;
   pid_t ppid;
@@ -450,15 +459,15 @@ int establishNTLMAuthenticationChildOne(int clientConnection, int serverSocket, 
     if(responseBuf)
     {
       char *tempBuf = (char*)malloc(responseSize+recvBufSize);
-      bufcpy(tempBuf, responseBuf, responseSize);
+      memcpy(tempBuf, responseBuf, responseSize);
       free(responseBuf);
       responseBuf = tempBuf;
     }
     else
       responseBuf = (char*)malloc(recvBufSize);
-    
-    bufcat(responseBuf, responseSize, listenBuf, recvBufSize);
-    
+
+    memcpy(responseBuf + responseSize, listenBuf, recvBufSize);
+
     int i;
     for(i = (responseSize<16) ? 0 : responseSize-16; !contentLength && i<responseSize+recvBufSize-15; i++)
     {
@@ -484,7 +493,7 @@ int establishNTLMAuthenticationChildOne(int clientConnection, int serverSocket, 
       }
     }
     responseSize+=recvBufSize;
-    
+
     if(endOfResponse && responseSize >= endOfResponse + contentLength)
       break;
   }
@@ -494,19 +503,18 @@ int establishNTLMAuthenticationChildOne(int clientConnection, int serverSocket, 
       syslog(LOG_NOTICE, "Server closed ungracefully in NTLM authentication Step 2. Killing session processes. Errno: %m.");
     return 1;
   }
-  
+  if(logging == TESTING)
+    logServerToClient(responseBuf, responseSize);
+
   close(serverSocket);
-  
+
   if(strncmp(&responseBuf[9]/*HTTP/1.x */, "407", 3) != 0) //did the proxy return a proxy authentication required error?
   {
     syslog(LOG_ERR, "Unexpected server response in NTLM authentication Step 2. Giving up.");
-//    syslog(LOG_NOTICE, "Size of response: %d", responseSize);
-//    responseBuf[responseSize] = '\0';
-//    syslog(LOG_NOTICE, "Response was: %s", responseBuf);
     free(responseBuf);
     return 1;
   }
-  
+
   //otherwise, step 2 is complete
   if(logging)
     syslog(LOG_NOTICE, "Step 2 is complete");
@@ -516,12 +524,12 @@ int establishNTLMAuthenticationChildOne(int clientConnection, int serverSocket, 
   {
     if(kill(ppid, SIGCONT)<0)
     {
-      syslog(LOG_ERR, "Failed to send continue signal in Step 2. Errno: %m");
+      syslog(LOG_ERR, "Failed to send continue signal in Step 2: %m");
       free(responseBuf);
       return 1;
     }
   }
-  
+
   //our connection should have been broken by the server, so this parent is going to die now, and let the new child of the child pick up the act.
   free(responseBuf);
   return 0;
@@ -533,15 +541,14 @@ int establishNTLMAuthenticationChildOne(int clientConnection, int serverSocket, 
 //	Called by establishNTLMAuthentication() to handle the child process
 //  The function actually continues the work of the original child, but with a
 //  copy of the new file descriptors established in the parent
-//
 //**************************************************************************
-int establishNTLMAuthenticationChildTwo(int clientConnection, int serverSocket, char logging)
+int establishNTLMAuthenticationChildTwo(int clientConnection, int serverSocket, int logging)
 {
   struct sharedData *shmData;
   pid_t ppid;
   if(establishNTLMChildSetup(&shmData, clientConnection, &ppid))
     return 1;
-  
+
   int recvBufSize, responseSize=0;
   char listenBuf[INCOMING_BUF_SIZE+1], *responseBuf=NULL;
   int contentLength=0;
@@ -549,6 +556,7 @@ int establishNTLMAuthenticationChildTwo(int clientConnection, int serverSocket, 
 
   if(logging)
     syslog(LOG_NOTICE, "Entering Step 4");
+  
   shmData->step4Started=1;
   /*****Step 4 - Proxy returns another 407 Unauthorised to the client*****/
   while((recvBufSize = recv(serverSocket, listenBuf, INCOMING_BUF_SIZE, 0)) > 0)
@@ -556,14 +564,14 @@ int establishNTLMAuthenticationChildTwo(int clientConnection, int serverSocket, 
     if(responseBuf)
     {
       char *tempBuf = (char*)malloc(responseSize+recvBufSize);
-      bufcpy(tempBuf, responseBuf, responseSize);
+      memcpy(tempBuf, responseBuf, responseSize);
       free(responseBuf);
       responseBuf = tempBuf;
     }
     else
       responseBuf = (char*)malloc(recvBufSize);
-    
-    bufcat(responseBuf, responseSize, listenBuf, recvBufSize);
+
+    memcpy(responseBuf + responseSize, listenBuf, recvBufSize);
 
     int i;
     for(i = responseSize<16 ? 0 : responseSize-16; i<responseSize+recvBufSize-15; i++)
@@ -590,22 +598,25 @@ int establishNTLMAuthenticationChildTwo(int clientConnection, int serverSocket, 
       }
     }
     responseSize+=recvBufSize;
-    
+
     if(endOfResponse && responseSize >= endOfResponse + contentLength)
       break;
   }
   if(recvBufSize<0)
   {
-    syslog(LOG_NOTICE, "Server closed ungracefully in NTLM authentication Step 4. Killing session processes. Errno: %m.");
+    syslog(LOG_NOTICE, "Server closed ungracefully in NTLM authentication Step 4. Killing session processes: %m.");
     return 1;
   }
+  if(logging == TESTING)
+    logServerToClient(responseBuf, responseSize);
   
   if(strncmp(&responseBuf[9]/*HTTP/1.x */, "407", 3) != 0) //did the proxy return a proxy authentication required error?
   {
     syslog(LOG_ERR, "Unexpected server response in NTLM authentication Step 4. Giving up.");
+    free(responseBuf);
     return 1;
   }
-  
+
   //find the Type 2 challenge
   int i;
   const int HEADER_LENGTH = 25;
@@ -615,9 +626,10 @@ int establishNTLMAuthenticationChildTwo(int clientConnection, int serverSocket, 
   if(i==responseSize-HEADER_LENGTH)
   {
     syslog(LOG_ERR, "No authentication challenge in NTLM authentication Step 4. Giving up.");
+    free(responseBuf);
     return 1;
   }
-  
+
   int authStringSize=0, startOfAuthString = i+HEADER_LENGTH;
   for(i=startOfAuthString; i<responseSize-1 && !bufferMatchesStringAtIndex(responseBuf, CRLF, i); i++)
     authStringSize++;
@@ -627,14 +639,15 @@ int establishNTLMAuthenticationChildTwo(int clientConnection, int serverSocket, 
   char *nonce;
   if(establishNTLMParseType2StringBase64(authString, authStringSize, &nonce, logging))
   {
+    free(responseBuf);
     return 1;
   }
   //otherwise, step 4 is complete
   if(logging)
     syslog(LOG_NOTICE, "The nonce is: %8s.", nonce);
-  bufcpy(shmData->nonce, nonce, 8);
+  memcpy(shmData->nonce, nonce, 8);
   free(nonce);
-  
+
   shmData->step4Finished=1;
   if(logging)
     syslog(LOG_NOTICE, "Finished Step 4");
@@ -642,16 +655,16 @@ int establishNTLMAuthenticationChildTwo(int clientConnection, int serverSocket, 
   {
     if(kill(ppid, SIGCONT)<0)
     {
-      syslog(LOG_ERR, "Failed to send continue signal in Step 4. Errno: %m");
+      syslog(LOG_ERR, "Failed to send continue signal in Step 4: %m");
       free(responseBuf);
       return 1;
     }
   }
-  
+
   //hopefully at this stage, the client will send the final authentication header, and the server will respond with the originally requested data
   //this stage of the communication will be handled by the regular conduct* functions.
   free(responseBuf);
-  
+
   return 0;
 }
 
@@ -659,26 +672,25 @@ int establishNTLMAuthenticationChildTwo(int clientConnection, int serverSocket, 
 //	establishNTLMParentSetup(struct sharedData **shmData, int *shmID)
 //
 //	Set up a few things for the NTLM parent processes, so they can do their work
-//
 //**************************************************************************
 int establishNTLMParentSetup(struct sharedData **shmData, int *shmID)
 {
   key_t shmKey;
-//  FILE *f = fopen("/tmp/authoxydThreadStuff", "w"); //should be created in main()
-//  fclose(f);
+  //  FILE *f = fopen("/tmp/authoxydThreadStuff", "w"); //should be created in main()
+  //  fclose(f);
   if((shmKey = ftok(AUTHOXYD_PID_PATH, getpid())) == -1) //note that ftok will only look at the lower 8 bits of the PID. Hopefully this part of the PID
   {                                                               //will actually change enough to give us a unique key
-    syslog(LOG_ERR, "Fatal Error: unable to get a key for shared memory");
+    syslog(LOG_ERR, "Fatal Error. Unable to get a key for shared memory: %m");
     return 1;
   }
   if((*shmID = shmget(shmKey, sizeof(struct sharedData), 0644 | IPC_CREAT)) == -1)
   {
-    syslog(LOG_ERR, "Fatal Error: unable to create shared memory");
+    syslog(LOG_ERR, "Fatal Error. Unable to create shared memory: %m");
     return 1;
   }
   if((*shmData = shmat(*shmID, (void *)0, 0)) == (struct sharedData*)(-1))
   {
-    syslog(LOG_ERR, "Fatal Error: unable to connect to shared memory");
+    syslog(LOG_ERR, "Fatal Error. Unable to connect to shared memory: %m");
     return 1;    
   }
   return 0;
@@ -688,7 +700,6 @@ int establishNTLMParentSetup(struct sharedData **shmData, int *shmID)
 //	establishNTLMChildSetup(struct sharedData **shmData, int clientConnection, pid_t &ppid)
 //
 //	Set up a few things for the NTLM child processes, so they can do their work
-//
 //**************************************************************************
 int establishNTLMChildSetup(struct sharedData **shmData, int clientConnection, pid_t *ppid)
 {
@@ -697,32 +708,31 @@ int establishNTLMChildSetup(struct sharedData **shmData, int clientConnection, p
   int shmID;
   if((shmKey = ftok(AUTHOXYD_PID_PATH, getppid())) == -1)  //see equivalent call in ParentSetup for discussion
   {
-    syslog(LOG_ERR, "Fatal Error: unable to get a key for shared memory");
+    syslog(LOG_ERR, "Fatal Error. Unable to get a key for shared memory: %m");
     return 1;
   }
   if((shmID = shmget(shmKey, sizeof(struct sharedData), 0)) == -1)
   {
-    syslog(LOG_ERR, "Fatal Error: unable to connect to shared memory");
+    syslog(LOG_ERR, "Fatal Error. Unable to connect to shared memory: %m");
     return 1;    
   }
   if((*shmData = shmat(shmID, (void *)0, 0)) == (struct sharedData*)(-1))
   {
-    syslog(LOG_ERR, "Fatal Error: unable to connect to shared memory");
+    syslog(LOG_ERR, "Fatal Error. Unable to connect to shared memory: %m");
     return 1;    
   }
-  
-//  close(clientConnection);  //not needed by the child
-  
+
+  //  close(clientConnection);  //not needed by the child
+
   *ppid = getppid();
-  
-  return 0;
+
+return 0;
 }
 
 //**************************************************************************
 //	establishNTLMGetType1String(char **authString, int *authStringSize, const char *domain, const char *workstation)
 //
 //	allocate memory to, and return the Type 1 NTLM authorization string in authString and its size in authStringSize
-//
 //**************************************************************************
 int establishNTLMGetType1String(char **authString, int *authStringSize, const char *domain, const char *workstation)
 {
@@ -732,20 +742,20 @@ int establishNTLMGetType1String(char **authString, int *authStringSize, const ch
   short datas;
   strcpy(msg.protocol, "NTLMSSP");
   datal = 1;
-  msg.type = LITTLE_ENDIAN_4(datal);
+  msg.type = OSSwapHostToLittleInt32(datal);
   datal = NTLM_FLAG_NEGOTIATE_OEM | NTLM_FLAG_REQUEST_TARGET | NTLM_FLAG_NEGOTIATE_NTLM | NTLM_FLAG_NEGOTIATE_DOMAIN_SUPPLIED | NTLM_FLAG_NEGOTIATE_WORKSTATION_SUPPLIED;
-  msg.flags = LITTLE_ENDIAN_4(datal);
+  msg.flags = OSSwapHostToLittleInt32(datal);
   datas = domLen;
-  msg.domain.length  = LITTLE_ENDIAN_2(datas);
-  msg.domain.length2 = LITTLE_ENDIAN_2(datas);
+  msg.domain.length = OSSwapHostToLittleInt16(datas);
+  msg.domain.length2 = OSSwapHostToLittleInt16(datas);
   datal = workLen + sizeof(msg);
-  msg.domain.offset  = LITTLE_ENDIAN_4(datal);
+  msg.domain.offset = OSSwapHostToLittleInt32(datal);
   datas = workLen;
-  msg.host.length    = LITTLE_ENDIAN_2(datas);
-  msg.host.length2   = LITTLE_ENDIAN_2(datas);
+  msg.host.length = OSSwapHostToLittleInt16(datas);
+  msg.host.length2 = OSSwapHostToLittleInt16(datas);
   datal = sizeof(msg);
-  msg.host.offset    = LITTLE_ENDIAN_4(datal);
-  
+  msg.host.offset = OSSwapHostToLittleInt32(datal);
+
   *authStringSize = sizeof(msg)+domLen+workLen;
   *authString = (char*)malloc(*authStringSize);
   char *msgPtr = (char*)&msg;
@@ -756,7 +766,7 @@ int establishNTLMGetType1String(char **authString, int *authStringSize, const ch
     (*authString)[i] = toupper(workstation[j]);
   for(j=0; j<domLen; j++, i++)
     (*authString)[i] = toupper(domain[j]);
-  
+
   return 0;
 }
 
@@ -764,51 +774,48 @@ int establishNTLMGetType1String(char **authString, int *authStringSize, const ch
 //	establishNTLMGetType1StringBase64(char **authString, int *authStringSize, const char *domain, const char *workstation)
 //
 //	return the base64 version of the Type 1 message
-//
 //**************************************************************************
 int establishNTLMGetType1StringBase64(char **authString, int *authStringSize, const char *domain, const char *workstation)
 {
   if(establishNTLMGetType1String(authString, authStringSize, domain, workstation))
-    return 1;
-  
+  return 1;
+
   char *encoded = encodeString(*authString, authStringSize);
   free(*authString);
   *authString = encoded;
   return 0;
 }  
-  
+
 //**************************************************************************
 //	establishNTLMParseType2String(char **authString, char **nonce, char logging)
 //
-//	
-//
 //**************************************************************************
-int establishNTLMParseType2String(char *authString, int authStringSize, char **nonce, char logging)
+int establishNTLMParseType2String(char *authString, int authStringSize, char **nonce, int logging)
 {
   struct type2Message *msgPtr = (struct type2Message*)authString;
   long datal;
   short datas;
-  
+
   if(strcmp(msgPtr->protocol, "NTLMSSP") != 0)
   {
     syslog(LOG_ERR, "Error in parsing NTLM Type 2 message: unexpected protocol.");
     return 1;
   }
   datal = 2;
-  if(msgPtr->type != LITTLE_ENDIAN_4(datal))
+  if(msgPtr->type != OSSwapHostToLittleInt32(datal))
   {
     syslog(LOG_ERR, "Error in parsing NTLM Type 2 message: unexpected type.");
     return 1;    
   }
-  
-  datas = LITTLE_ENDIAN_2(msgPtr->target.length);
+
+  datas = OSSwapLittleToHostInt16(msgPtr->target.length);
   if(logging) syslog(LOG_NOTICE, "NTLM: Target length is %d", datas);
-  datas = LITTLE_ENDIAN_2(msgPtr->target.length2);
+    datas = OSSwapLittleToHostInt16(msgPtr->target.length2);
   if(logging) syslog(LOG_NOTICE, "NTLM: Target length 2 is %d", datas);
-  datal = LITTLE_ENDIAN_4(msgPtr->target.offset);
+    datal = OSSwapLittleToHostInt32(msgPtr->target.offset);
   if(logging) syslog(LOG_NOTICE, "NTLM: Target offset is %d", datal);
-  
-  datal = LITTLE_ENDIAN_4(msgPtr->flags);
+
+  datal = OSSwapLittleToHostInt32(msgPtr->flags);
   if(logging)
   {
     if(datal & NTLM_FLAG_NEGOTIATE_UNICODE)
@@ -880,13 +887,13 @@ int establishNTLMParseType2String(char *authString, int authStringSize, char **n
   int i;
   for(i=0; i<8; i++)
     (*nonce)[i] = msgPtr->nonce[i];
-  
-  if(LITTLE_ENDIAN_2(msgPtr->target.length))  //well, there appears to be something there. Better print it out I guess
+
+  if(OSSwapLittleToHostInt16(msgPtr->target.length))  //well, there appears to be something there. Better print it out I guess
   {
-    int len = LITTLE_ENDIAN_2(msgPtr->target.length);
-    int off = LITTLE_ENDIAN_4(msgPtr->target.offset);
+    int len = OSSwapLittleToHostInt16(msgPtr->target.length);
+    int off = OSSwapLittleToHostInt32(msgPtr->target.offset);
     char target[len+1];
-    bufcpy(target, &authString[off], len);
+    memcpy(target, &authString[off], len);
     for(i=0; i<len; i++)
       if(target[i]=='\0')
         target[i]='^';
@@ -894,23 +901,23 @@ int establishNTLMParseType2String(char *authString, int authStringSize, char **n
     if(logging)
       syslog(LOG_NOTICE, "NTLM: Target is: %s", target);
   }
-  
-  datal = LITTLE_ENDIAN_4(msgPtr->flags);
+
+  datal = OSSwapLittleToHostInt32(msgPtr->flags);
   if(datal & NTLM_FLAG_NEGOTIATE_TARGET_INFO) //have a look at the target information buffer
   {
-    datas = LITTLE_ENDIAN_2(msgPtr->targetInfo.length);
+    datas = OSSwapLittleToHostInt16(msgPtr->targetInfo.length);
     if(logging) syslog(LOG_NOTICE, "NTLM: Target length is %d", datas);
-    datas = LITTLE_ENDIAN_2(msgPtr->targetInfo.length2);
+    datas = OSSwapLittleToHostInt16(msgPtr->targetInfo.length2);
     if(logging) syslog(LOG_NOTICE, "NTLM: Target length 2 is %d", datas);
-    datal = LITTLE_ENDIAN_4(msgPtr->targetInfo.offset);
+    datal = OSSwapLittleToHostInt32(msgPtr->targetInfo.offset);
     if(logging) syslog(LOG_NOTICE, "NTLM: Target offset is %d", datal);
-    
-    if(LITTLE_ENDIAN_2(msgPtr->targetInfo.length))  //well, there appears to be something there. Better print it out I guess
+
+    if(OSSwapLittleToHostInt16(msgPtr->targetInfo.length))  //well, there appears to be something there. Better print it out I guess
     {
-      int len = LITTLE_ENDIAN_2(msgPtr->targetInfo.length);
-      int off = LITTLE_ENDIAN_4(msgPtr->targetInfo.offset);
+      int len = OSSwapLittleToHostInt16(msgPtr->targetInfo.length);
+      int off = OSSwapLittleToHostInt32(msgPtr->targetInfo.offset);
       char targetInfo[len+1];
-      bufcpy(targetInfo, &authString[off], len);
+      memcpy(targetInfo, &authString[off], len);
       for(i=0; i<len; i++)
         if(targetInfo[i]=='\0')
           targetInfo[i]='^';
@@ -919,25 +926,23 @@ int establishNTLMParseType2String(char *authString, int authStringSize, char **n
         syslog(LOG_NOTICE, "NTLM: TargetInfo is: %s", targetInfo);
     }
   }
-  
+
   return 0;
 }
 
 //**************************************************************************
 //	establishNTLMParseType2StringBase64(char **authString, char **nonce, char logging)
 //
-//	
-//
 //**************************************************************************
-int establishNTLMParseType2StringBase64(char *authString, int authStringSize, char **nonce, char logging)
+int establishNTLMParseType2StringBase64(char *authString, int authStringSize, char **nonce, int logging)
 {
   int returnValue=0;
-  
+
   char *decoded = decodeString(authString, &authStringSize);
-  
+
   if(establishNTLMParseType2String(decoded, authStringSize, nonce, logging))
     returnValue=1;
-  
+
   free(decoded);
   return returnValue;
 }
@@ -956,50 +961,50 @@ int establishNTLMGetType3String(char **authString, int *authStringSize, const ch
   short datas;
   strcpy(msg.protocol, "NTLMSSP");
   datal = 3;
-  msg.type = LITTLE_ENDIAN_4(datal);
-  
+  msg.type = OSSwapHostToLittleInt32(datal);
+
   datas = 24;
-  msg.LMResponse.length = LITTLE_ENDIAN_2(datas);
-  msg.LMResponse.length2= LITTLE_ENDIAN_2(datas);
+  msg.LMResponse.length = OSSwapHostToLittleInt16(datas);
+  msg.LMResponse.length2= OSSwapHostToLittleInt16(datas);
   datal = sizeof(msg) + domLen + userLen + hostLen;
-  msg.LMResponse.offset = LITTLE_ENDIAN_4(datal);
-  
+  msg.LMResponse.offset = OSSwapHostToLittleInt32(datal);
+
   datas = 24;
-//  datas = 0;
-  msg.NTResponse.length = LITTLE_ENDIAN_2(datas);
-  msg.NTResponse.length2= LITTLE_ENDIAN_2(datas);
-  datal = sizeof(msg) + domLen + userLen + hostLen + LITTLE_ENDIAN_2(msg.LMResponse.length2);
-  msg.NTResponse.offset = LITTLE_ENDIAN_4(datal);
-  
+  //  datas = 0;
+  msg.NTResponse.length = OSSwapHostToLittleInt16(datas);
+  msg.NTResponse.length2= OSSwapHostToLittleInt16(datas);
+  datal = sizeof(msg) + domLen + userLen + hostLen + OSSwapLittleToHostInt16(msg.LMResponse.length2);
+  msg.NTResponse.offset = OSSwapHostToLittleInt32(datal);
+
   datas = domLen;
-  msg.domain.length = LITTLE_ENDIAN_2(datas);
-  msg.domain.length2= LITTLE_ENDIAN_2(datas);
+  msg.domain.length = OSSwapHostToLittleInt16(datas);
+  msg.domain.length2= OSSwapHostToLittleInt16(datas);
   datal = 64;
-  msg.domain.offset = LITTLE_ENDIAN_4(datal);
-  
+  msg.domain.offset = OSSwapHostToLittleInt32(datal);
+
   datas = userLen;
-  msg.username.length = LITTLE_ENDIAN_2(datas);
-  msg.username.length2= LITTLE_ENDIAN_2(datas);
+  msg.username.length = OSSwapHostToLittleInt16(datas);
+  msg.username.length2= OSSwapHostToLittleInt16(datas);
   datal = 64 + domLen;
-  msg.username.offset = LITTLE_ENDIAN_4(datal);
-  
+  msg.username.offset = OSSwapHostToLittleInt32(datal);
+
   datas = hostLen;
-  msg.host.length = LITTLE_ENDIAN_2(datas);
-  msg.host.length2= LITTLE_ENDIAN_2(datas);
+  msg.host.length = OSSwapHostToLittleInt16(datas);
+  msg.host.length2= OSSwapHostToLittleInt16(datas);
   datal = 64 + domLen + userLen;
-  msg.host.offset = LITTLE_ENDIAN_4(datal);
-  
+  msg.host.offset = OSSwapHostToLittleInt32(datal);
+
   datas = 0;
-  msg.sessionKey.length = LITTLE_ENDIAN_2(datas);
-  msg.sessionKey.length2= LITTLE_ENDIAN_2(datas);
-  datal = sizeof(msg) + domLen + userLen + hostLen + LITTLE_ENDIAN_2(msg.LMResponse.length2) + LITTLE_ENDIAN_2(msg.NTResponse.length2);
-  msg.sessionKey.offset = LITTLE_ENDIAN_4(datal);
-  
+  msg.sessionKey.length = OSSwapHostToLittleInt16(datas);
+  msg.sessionKey.length2= OSSwapHostToLittleInt16(datas);
+  datal = sizeof(msg) + domLen + userLen + hostLen + OSSwapLittleToHostInt16(msg.LMResponse.length2) + OSSwapLittleToHostInt16(msg.NTResponse.length2);
+  msg.sessionKey.offset = OSSwapHostToLittleInt32(datal);
+
   //same flags as step 1
   datal = NTLM_FLAG_NEGOTIATE_OEM | NTLM_FLAG_REQUEST_TARGET | NTLM_FLAG_NEGOTIATE_NTLM | NTLM_FLAG_NEGOTIATE_DOMAIN_SUPPLIED | NTLM_FLAG_NEGOTIATE_WORKSTATION_SUPPLIED;
-  msg.flags = LITTLE_ENDIAN_4(datal);
-  
-  *authStringSize = sizeof(msg) + domLen + userLen + hostLen + LITTLE_ENDIAN_2(msg.LMResponse.length2) + LITTLE_ENDIAN_2(msg.NTResponse.length2);
+  msg.flags = OSSwapHostToLittleInt32(datal);
+
+  *authStringSize = sizeof(msg) + domLen + userLen + hostLen + OSSwapLittleToHostInt16(msg.LMResponse.length2) + OSSwapLittleToHostInt16(msg.NTResponse.length2);
   *authString = (char*)malloc(*authStringSize);
   char *msgPtr = (char*)&msg;
   for(i=0; i<sizeof(msg); i++)
@@ -1011,15 +1016,15 @@ int establishNTLMGetType3String(char **authString, int *authStringSize, const ch
     (*authString)[i] = toupper(username[j]);
   for(j=0; j<hostLen; j++, i++)
     (*authString)[i] = toupper(host[j]);
-  
+
   char *NTLMResponse=NULL;
   establishNTLMGetHashedPassword(&NTLMResponse, password, nonce);
-  for(j=0; j<LITTLE_ENDIAN_2(msg.LMResponse.length2) + LITTLE_ENDIAN_2(msg.NTResponse.length2); j++, i++)
+  for(j=0; j<OSSwapLittleToHostInt16(msg.LMResponse.length2) + OSSwapLittleToHostInt16(msg.NTResponse.length2); j++, i++)
     (*authString)[i] = NTLMResponse[j];
-  
+
   if(NTLMResponse)
     free(NTLMResponse);
-  
+
   return 0;
 }
 
@@ -1033,11 +1038,11 @@ int establishNTLMGetType3StringBase64(char **authString, int *authStringSize, co
 {
   if(establishNTLMGetType3String(authString, authStringSize, username, password, host, domain, nonce))
     return 1;
-  
+
   char *encoded = encodeString(*authString, authStringSize);
   free(*authString);
   *authString = encoded;
-  
+
   return 0;
 }
 
@@ -1049,13 +1054,13 @@ int establishNTLMGetType3StringBase64(char **authString, int *authStringSize, co
 //**************************************************************************
 //ex-nested function
 /*
- * turns a 56 bit key into the 64 bit, odd parity key and sets the key.
- * The key schedule ks is also set.
- */
-void SetupDESKey(unsigned char key56[], des_key_schedule ks)
+* turns a 56 bit key into the 64 bit, odd parity key and sets the key.
+* The key schedule ks is also set.
+*/
+void SetupDESKey(unsigned char key56[], DES_key_schedule ks)
 {
-  des_cblock key;
-  
+  DES_cblock key;
+
   key[0] = key56[0];
   key[1] = ((key56[0] << 7) & 0xFF) | (key56[1] >> 1);
   key[2] = ((key56[1] << 6) & 0xFF) | (key56[2] >> 2);
@@ -1064,30 +1069,30 @@ void SetupDESKey(unsigned char key56[], des_key_schedule ks)
   key[5] = ((key56[4] << 3) & 0xFF) | (key56[5] >> 5);
   key[6] = ((key56[5] << 2) & 0xFF) | (key56[6] >> 6);
   key[7] =  (key56[6] << 1) & 0xFF;
-  
-  des_set_odd_parity(&key);
-  des_set_key(&key, ks);
+
+  DES_set_odd_parity(&key);
+  DES_set_key(&key, &ks);
 };
 
 //ex-nested function 2
 /*
- * takes a 21 byte array and treats it as 3 56-bit DES keys. The
- * 8 byte plaintext is encrypted with each key and the resulting 24
- * bytes are stored in the results array.
- */
+* takes a 21 byte array and treats it as 3 56-bit DES keys. The
+* 8 byte plaintext is encrypted with each key and the resulting 24
+* bytes are stored in the results array.
+*/
 void CalculateResponse(unsigned char *keys, const unsigned char *plaintext, unsigned char *results)
 {
-  des_key_schedule ks;
+  DES_key_schedule ks;
   
   SetupDESKey(keys, ks);
-  des_ecb_encrypt((des_cblock*)plaintext, (des_cblock*)results, ks, DES_ENCRYPT);
+  DES_ecb_encrypt((DES_cblock*)plaintext, (DES_cblock*)results, &ks, DES_ENCRYPT);
   
   SetupDESKey(&keys[7], ks);
-  des_ecb_encrypt((des_cblock*)plaintext, (des_cblock*)(&results[8]), ks, DES_ENCRYPT);
+  DES_ecb_encrypt((DES_cblock*)plaintext, (DES_cblock*)(&results[8]), &ks, DES_ENCRYPT);
   
   SetupDESKey(&keys[14], ks);
-  des_ecb_encrypt((des_cblock*)plaintext, (des_cblock*)(&results[16]), ks, DES_ENCRYPT);
-};  
+  DES_ecb_encrypt((DES_cblock*)plaintext, (DES_cblock*)(&results[16]), &ks, DES_ENCRYPT);
+};
 
 //actual function
 int establishNTLMGetHashedPassword(char **response, const char *password, const unsigned char *nonce)
@@ -1104,14 +1109,14 @@ int establishNTLMGetHashedPassword(char **response, const char *password, const 
   
   unsigned char magic[] = { 0x4B, 0x47, 0x53, 0x21, 0x40, 0x23, 0x24, 0x25 }; //"KGS!@#$%"
   unsigned char LMHashedPassword[21];
-  des_key_schedule ks;
+  DES_key_schedule ks;
   
   SetupDESKey(LMPassword, ks);
-  des_ecb_encrypt((const_des_cblock*)magic, (des_cblock*)LMHashedPassword, ks, 1);  //NOTE: kinda dodge - maybe I should learn this DES shit and do it properly
-                                                                                    //atm, the 1 is a guess, there is typecasting, the man page recommends not using
-                                                                                    //these functions directly, and I'm forced to use old OpenSSL stuff
+  DES_ecb_encrypt((const_DES_cblock*)magic, (DES_cblock*)LMHashedPassword, &ks, DES_ENCRYPT);  //NOTE: kinda dodge - maybe I should learn this DES shit and do it properly
+                                                                                              //atm, the DES_ENCRYPT is a guess, there is typecasting, the man page recommends not using
+                                                                                              //these functions directly, and I'm forced to use old OpenSSL stuff
   SetupDESKey(&LMPassword[7], ks);
-  des_ecb_encrypt((const_des_cblock*)magic, (des_cblock*)&LMHashedPassword[8], ks, 1);
+  DES_ecb_encrypt((const_DES_cblock*)magic, (DES_cblock*)&LMHashedPassword[8], &ks, DES_ENCRYPT);
   
   memset(&LMHashedPassword[16], 0, 5);
   
@@ -1125,9 +1130,9 @@ int establishNTLMGetHashedPassword(char **response, const char *password, const 
   
   unsigned char NTHashedPassword[21];
   MD4_CTX context;
-  MD4Init(&context);
-  MD4Update(&context, NTPassword, 2*passLen);
-  MD4Final(NTHashedPassword, &context);
+  MD4_Init(&context);
+  MD4_Update(&context, NTPassword, 2*passLen);
+  MD4_Final(NTHashedPassword, &context);
   
   memset(&NTHashedPassword[16], 0, 5);
   

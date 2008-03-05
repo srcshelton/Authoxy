@@ -27,12 +27,10 @@
 #include "AuthoxyDaemon.h"
 #include "base64.h"
 
+#include <curl/curl.h>
+  
 int main(int argc, char* argv[])
 {  
-  int clientSocket;
-  char *authStr;
-  JSFunction *compiledPAC;
-  
   char usingNTLM=0;  //are we using NTLM?
   if(argc == 8)
     usingNTLM=0;
@@ -48,21 +46,33 @@ int main(int argc, char* argv[])
   daemon(0, 0);
   //write our new PID to file (since it will be different to the one we started with)
   mode_t oldMask = umask(0);  //set new file mode to 0666 (read/write by everyone)
-  FILE *f = fopen(AUTHOXYD_PID_PATH, "w");
-  if(f)
+  FILE *f1 = fopen(AUTHOXYD_PID_PATH, "w");
+  if(f1)
   {
-    fprintf(f, "%d", getpid());
-    fclose(f);    
+    fprintf(f1, "%d", getpid());
+    fclose(f1);    
   }
   //also write the port we are using to a file
-  f = fopen(AUTHOXYD_PORT_PATH, "w");
-  if(f)
+  FILE *f2 = fopen(AUTHOXYD_PORT_PATH, "w");
+  if(f2)
   {
-    fprintf(f, "%d", ARG_LPORT);
-    fclose(f);    
+    fprintf(f2, "%d", ARG_LPORT);
+    fclose(f2);    
+  }
+  if(ARG_TEST)
+  {
+    FILE *f = fopen(AUTHOXYD_TEST_PATH, "w");
+    if(f)
+    {
+      fprintf(f, "Test connection for authoxyd has begun.\n");
+      fclose(f);
+    }
   }
   umask(oldMask); //set it back
   
+  int clientSocket;
+  char *authStr;
+  JSFunction *compiledPAC;
   struct NTLMSettings theNTLMSettings;
 
   if(usingNTLM)
@@ -112,17 +122,69 @@ int main(int argc, char* argv[])
   if( (clientSocket = establishClientSide(ARG_LPORT, MAX_PEND, ARG_EXTERN)) < 0)
     return 1;
 
-  syslog(LOG_NOTICE, "Authoxy has started successfully");
-//right, client socket is setup, the fun begins...
-  for (;;)	//enter an endless loop, handling requests
+  if(ARG_LOGTEST != TESTING)
+    syslog(LOG_NOTICE, "Authoxy has started successfully");
+  else
+    syslog(LOG_NOTICE, "Authoxy started in test mode. Full transcript will be written to /tmp/authoxy.test");
+      
+  //right, client socket is setup, the fun begins...
+  int run = 1;
+  while(run)	//enter an endless loop, handling requests
   {
-    int clientConnection;
+    if(ARG_TEST) // spawn a process to make a web request
+    {
+      switch(fork())
+      {
+        case -1:						//trouble!!
+          syslog(LOG_ERR, "Fatal Error. Unable to create new process: %m");
+          close(clientSocket);
+          exit(EXIT_FAILURE);
+        case 0:             //the child
+          close(clientSocket);
+          //perform a web request
+          CURL *myCurl = curl_easy_init();
+          if(!myCurl)
+          {
+            syslog(LOG_ERR, "Unable to initialise curl library. Something is terribly wrong!");
+            exit(EXIT_FAILURE);
+          }
+
+          char proxyAdd[16];
+          strcpy(proxyAdd, "127.0.0.1:");
+          strcpy(&proxyAdd[10], ARG_LPORT_STR);
+          char errorBuf[CURL_ERROR_SIZE];
+          
+          curl_easy_setopt(myCurl, CURLOPT_NOPROGRESS, 1);	//turn off progress indication
+          curl_easy_setopt(myCurl, CURLOPT_PROXY, proxyAdd);
+          curl_easy_setopt(myCurl, CURLOPT_URL, "http://www.hrsoftworks.net/TestConnection.html");
+          curl_easy_setopt(myCurl, CURLOPT_ERRORBUFFER, errorBuf);
+          if(curl_easy_perform(myCurl))	//download
+            syslog(LOG_ERR, "Failed to fetch URL: %s", errorBuf);
+          else
+          {
+            long resultCode;
+            curl_easy_getinfo(myCurl, CURLINFO_RESPONSE_CODE, &resultCode);
+            if(resultCode == 200) //Success
+              syslog(LOG_NOTICE, "Successfully fetched URL.");
+            else if(resultCode == 407)  //Proxy authentication required
+              syslog(LOG_ERR, "Failed to fetch URL. Proxy authentication rejected.");
+            else
+              syslog(LOG_ERR, "Failed to fetch URL. Server returned result code: %d", resultCode);
+          }
+          curl_easy_cleanup(myCurl);	//clean up after ourselves
+          
+          exit(EXIT_SUCCESS);
+
+        //the parent will just continue on
+      }
+    }
     
+    int clientConnection;
     if((clientConnection = handleConnection(clientSocket)) < 0)
     {
       if (errno == EINTR)	//apparently this may happen, and we just try again
         continue;					//otherwise we have problems...
-      syslog(LOG_ERR, "Fatal Error: Unable to handle listening connection.");
+      syslog(LOG_ERR, "Fatal Error. Unable to handle listening connection: %m");
       close(clientConnection);
       close(clientSocket);
       return 1;
@@ -131,26 +193,43 @@ int main(int argc, char* argv[])
     switch(fork())			//spawn a new process to handle the request
     {
       case -1:						//trouble!!
-        syslog(LOG_ERR, "Fatal Error: Unable to create new process.");
+        syslog(LOG_ERR, "Fatal Error. Unable to create new process: %m");
         close(clientConnection);
         close(clientSocket);
         exit(EXIT_FAILURE);
       case 0:							//the child
         close(clientSocket);	//the child doesn't need this
         if(ARG_AUTO)
-          performDaemonConnectionWithPACFile(compiledPAC, ARG_ADD, ARG_RPORT, clientConnection, authStr, usingNTLM, &theNTLMSettings, ARG_LOG);
+          performDaemonConnectionWithPACFile(compiledPAC, ARG_ADD, ARG_RPORT, clientConnection, authStr, usingNTLM, &theNTLMSettings, ARG_LOGTEST);
         else
-          performDaemonConnection(ARG_ADD, ARG_RPORT, clientConnection, authStr, usingNTLM, &theNTLMSettings, ARG_LOG);
+          performDaemonConnection(ARG_ADD, ARG_RPORT, clientConnection, authStr, usingNTLM, &theNTLMSettings, ARG_LOGTEST);
       
-      default:						//the parent, so continue on our merry way
+      default: //the parent, so continue on our merry way
         close(clientConnection);
-        continue;
+        
+        if(!ARG_TEST)
+          continue;
+        else  //we're testing, so wait for the child to finish its business and then quit
+        {
+          //Initialise result in case the parent is killed by the child and therefore doesn't return a result.
+          //This happens in the successful case when the client closes the connection after completing its request.
+          int result = EXIT_SUCCESS;
+          wait(&result);
+          if(result == EXIT_SUCCESS)
+            syslog(LOG_NOTICE, "No connection problems. Check the log at %s if you experience difficulties.", AUTHOXYD_TEST_PATH);
+          else
+            syslog(LOG_NOTICE, "Connection failed. A log of the communication has been written to %s", AUTHOXYD_TEST_PATH);
+          run = 0;  //stop running
+          break;
+        }
     }
   }
 
   //these lines are actually unlikely to be called, except under exceptional failures
   close(clientSocket);
 
+  free(authStr);
+  
   if(ARG_AUTO)
   {
     JS_DestroyContext(cx);
@@ -160,13 +239,13 @@ int main(int argc, char* argv[])
   return 0;
 }
 
-void performDaemonConnection(char *argAdd, int argRPort, int clientConnection, char *authStr, char usingNTLM, struct NTLMSettings *theNTLMSettingsPtr, char logging)
+void performDaemonConnection(char *argAdd, int argRPort, int clientConnection, char *authStr, char usingNTLM, struct NTLMSettings *theNTLMSettingsPtr, int logging)
 {
   int serverSocket;
   
   if( (serverSocket = establishServerSide(argAdd, argRPort)) < 0 )
   {
-    syslog(LOG_NOTICE, "Couldn't open connection to proxy server. Errno: %m");
+    syslog(LOG_NOTICE, "Couldn't open connection to proxy server: %m");
     close(clientConnection);
     exit(EXIT_FAILURE);
   }
@@ -180,7 +259,7 @@ void performDaemonConnection(char *argAdd, int argRPort, int clientConnection, c
     exit(EXIT_SUCCESS);
 }
 
-void performDaemonConnectionWithPACFile(JSFunction *compiledPAC, char *argADD, int argRPort, int clientConnection, char *authStr, char usingNTLM, struct NTLMSettings *theNTLMSettingsPtr, char logging)
+void performDaemonConnectionWithPACFile(JSFunction *compiledPAC, char *argADD, int argRPort, int clientConnection, char *authStr, char usingNTLM, struct NTLMSettings *theNTLMSettingsPtr, int logging)
 {
   int serverSocket;
   
@@ -303,7 +382,7 @@ void performDaemonConnectionWithPACFile(JSFunction *compiledPAC, char *argADD, i
   }
   else
   {
-    syslog(LOG_ERR, "Couldn't peek at client request for auto config script input. Errno: %m");
+    syslog(LOG_ERR, "Couldn't peek at client request for auto config script input: %m");
     exit(EXIT_FAILURE);
   }
 }
@@ -318,22 +397,6 @@ void fireman(int sig)
     ;
 }
 
-/* my replacements for strcpy and strcat so we can deal with that pesky null character
-*/
-void bufcpy(char *dst, const char *src, int len)
-{
-  int i;
-  for(i=0; i<len; i++)
-    dst[i]=src[i];
-}
-
-void bufcat(char *dst, int dstLen, const char *src, int srcLen)
-{
-  int i, j=0;
-  for(i=dstLen; i<dstLen+srcLen; i++)
-    dst[i]=src[j++];
-}
-
 int bufferMatchesStringAtIndex(const char *buffer, const char *string, int index)
 {
   int i;
@@ -342,4 +405,32 @@ int bufferMatchesStringAtIndex(const char *buffer, const char *string, int index
     if(buffer[index+i] != string[i])
       return 0;
   return 1;
+}
+
+void logClientToServer(char *buf, int bufSize)
+{
+  mode_t oldMask = umask(0);
+  FILE *f = fopen(AUTHOXYD_TEST_PATH, "a");
+  if(f)
+  {
+    fprintf(f, "\n\n>>>\n\n");
+    buf[bufSize] = '\0';
+    fprintf(f, "%s", buf);
+    fclose(f);
+  }
+  umask(oldMask);  
+}
+
+void logServerToClient(char *buf, int bufSize)
+{
+  mode_t oldMask = umask(0);
+  FILE *f = fopen(AUTHOXYD_TEST_PATH, "a");
+  if(f)
+  {
+    fprintf(f, "\n\n<<<\n\n");
+    buf[bufSize] = '\0';
+    fprintf(f, "%s", buf);
+    fclose(f);
+  }
+  umask(oldMask);
 }

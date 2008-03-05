@@ -32,7 +32,7 @@
 //	split into two threads to conduct a two way HTTP session
 //
 //**************************************************************************
-int conductSession(int clientConnection, char authStr[], int serverSocket, char logging, struct NTLMSettings *theNTLMSettings)
+int conductSession(int clientConnection, char authStr[], int serverSocket, int logging, struct NTLMSettings *theNTLMSettings)
 {
   if(theNTLMSettings)
   {
@@ -46,7 +46,7 @@ int conductSession(int clientConnection, char authStr[], int serverSocket, char 
   switch(pid = fork())			//spawn a new process to handle the request
   {
     case -1:						//trouble!!
-      syslog(LOG_ERR, "Fatal Error: Unable to create new process. Errno: %m");
+      syslog(LOG_ERR, "Fatal Error. Unable to create new process: %m");
       close(clientConnection);
       exit(1);
     case 0:							//the child
@@ -102,7 +102,7 @@ int handleConnection(int clientSocket)
   
   if((connection = accept(clientSocket, (struct sockaddr*) &clientAddr, &sinSize)) < 0)		//wait for connection
   {
-    syslog(LOG_ERR, "Fatal Error: unable to accept connection on listen socket. Errno: %m");
+    syslog(LOG_ERR, "Fatal Error. Unable to accept connection on listen socket: %m");
     return -1;
   }
   else
@@ -142,13 +142,13 @@ int establishServerSide(char *hostname, unsigned short portnum)
 
   if((talkSocket = socket(hp->h_addrtype,SOCK_STREAM,0)) < 0)		//establish talker socket
   {
-    syslog(LOG_ERR, "Fatal Error: unable to establish talker socket. Errno: %m");
+    syslog(LOG_ERR, "Fatal Error. Unable to establish talker socket: %m");
     return -1;
   }
   if(connect(talkSocket, (struct sockaddr *)&talkSockAddr, sizeof(struct sockaddr_in)) < 0)		//connect to talker socket
   {
     close(talkSocket);
-    syslog(LOG_ERR, "Fatal Error: unable to connect to talker socket. Errno: %m");
+    syslog(LOG_ERR, "Fatal Error. Unable to connect to talker socket: %m");
     return -1;
   }
   
@@ -175,7 +175,7 @@ int establishClientSide(int port, int maxpend, char external)
 
   if((listenSocket = socket(AF_INET, SOCK_STREAM, 0)) < 0)	//open up a internet socket
   {
-    syslog(LOG_ERR, "Fatal Error: unable to establish listener socket. Errno: %m");
+    syslog(LOG_ERR, "Fatal Error. Unable to establish listener socket: %m");
     return -1;
   }
   
@@ -198,7 +198,7 @@ int establishClientSide(int port, int maxpend, char external)
   if(listen(listenSocket, maxpend) < 0)		//make it a listen port with maxpend max pending connections
   {
     close(listenSocket);
-    syslog(LOG_ERR, "Fatal Error: unable to establish listen socket. Errno: %m");
+    syslog(LOG_ERR, "Fatal Error. Unable to establish listen socket: %m");
     return -1;
   }
   
@@ -216,7 +216,7 @@ int establishClientSide(int port, int maxpend, char external)
 #define CR2nd 3
 #define LF2nd 4
 
-int conductClientSide(int clientConnection, char authStr[], int serverSocket, char logging)
+int conductClientSide(int clientConnection, char authStr[], int serverSocket, int logging)
 {
   while(1)
   {
@@ -224,7 +224,7 @@ int conductClientSide(int clientConnection, char authStr[], int serverSocket, ch
     char listenBuf[INCOMING_BUF_SIZE+strlen(authStr)+1], *tempBuf=NULL;
     char debugBuf[81];
     int CRLFCRLF=0; //value to determine if the CRLFCRLF has been seen yet
-
+    
     while((recvBufSize = recv(clientConnection, listenBuf, INCOMING_BUF_SIZE, 0)) > 0)  //retrieve the data on the listen socket
     {
       if(endHeader && (//first time we enter this, we know it is a header and don't need to do this checking. Otherwise...
@@ -250,16 +250,16 @@ int conductClientSide(int clientConnection, char authStr[], int serverSocket, ch
             CRLFCRLF = LF2nd;
             //we've found the end of the headers! Lets insert our little auth string.
             tempBuf = (char*) malloc((recvBufSize-i-1)*sizeof(char));
-            bufcpy(tempBuf, &listenBuf[i+1], recvBufSize-i-1);
+            memcpy(tempBuf, &listenBuf[i+1], recvBufSize-i-1);
             if (i==0)
             {
-              bufcat(listenBuf, i, authStr, strlen(authStr));
-              bufcat(listenBuf, i+strlen(authStr), tempBuf, recvBufSize-i-1);
+              memcpy(listenBuf + i, authStr, strlen(authStr));
+              memcpy(listenBuf + i+strlen(authStr), tempBuf, recvBufSize-i-1);
             }
             else
             {
-              bufcat(listenBuf, i-1, authStr, strlen(authStr));
-              bufcat(listenBuf, i-1+strlen(authStr), tempBuf, recvBufSize-i-1);
+              memcpy(listenBuf + i-1, authStr, strlen(authStr));
+              memcpy(listenBuf + i-1+strlen(authStr), tempBuf, recvBufSize-i-1);
             }              
             free(tempBuf);
             recvBufSize += strlen(authStr)-2;	//-2 for the CRLF which gets taken off the old end of headers
@@ -280,7 +280,7 @@ int conductClientSide(int clientConnection, char authStr[], int serverSocket, ch
             CRLFCRLF = 0;
         }
 
-        if(logging)
+        if(logging == LOGGING)
         {
           logging=0;	//only make a log entry once per connection
           i=0; j=0;
@@ -309,13 +309,14 @@ int conductClientSide(int clientConnection, char authStr[], int serverSocket, ch
       {
         if((bytesSent += send(serverSocket, &listenBuf[bytesSent], recvBufSize-bytesSent, 0)) < 0)
         {
-          syslog(LOG_NOTICE, "Couldn't send to talk connection. Errno: %m");
+          syslog(LOG_NOTICE, "Couldn't send to talk connection: %m");
           return -1;
         }
 //      syslog(LOG_NOTICE, "just sent this");
 //      syslog(LOG_NOTICE, listenBuf);
       }
-      
+      if(logging == TESTING)
+        logClientToServer(listenBuf, bytesSent);
     }
     
     if(recvBufSize==0)	//connection has been closed
@@ -352,7 +353,7 @@ int conductClientSide(int clientConnection, char authStr[], int serverSocket, ch
 //	loop continuously, pushing data from the client to the server
 //
 //**************************************************************************
-int conductClientSideDirectly(int clientConnection, int serverSocket, char logging)
+int conductClientSideDirectly(int clientConnection, int serverSocket, int logging)
 {
   int recvBufSize=0, bytesSent, directed=0;
   char listenBuf[INCOMING_BUF_SIZE+1];
@@ -396,10 +397,12 @@ int conductClientSideDirectly(int clientConnection, int serverSocket, char loggi
       if((bytesSent += send(serverSocket, &listenBuf[bytesSent], recvBufSize-bytesSent, 0)) < 0)
       {
         if(logging)
-          syslog(LOG_NOTICE, "Couldn't send direct to server. Errno: %m");
+          syslog(LOG_NOTICE, "Couldn't send direct to server: %m");
         return -1;
       }
     }
+    if(logging == TESTING)
+      logClientToServer(listenBuf, recvBufSize);
   }
   if(recvBufSize==0)	//connection has been closed
   {
@@ -427,7 +430,7 @@ int conductClientSideDirectly(int clientConnection, int serverSocket, char loggi
 //	loop continuously, pushing data from the server to the client
 //
 //**************************************************************************
-int conductServerSide(int clientConnection, int serverSocket, char logging)
+int conductServerSide(int clientConnection, int serverSocket, int logging)
 {
   while(1)
   {
@@ -445,24 +448,20 @@ int conductServerSide(int clientConnection, int serverSocket, char logging)
         if((sentChars+=send(clientConnection, &listenBuf[sentChars], recvBufSize-sentChars, 0)) < 0)
         {
           if(logging)
-          {
-            syslog(LOG_NOTICE, "Couldn't send to listen connection. Errno: %m");
-//            syslog(LOG_NOTICE, strerror(errno));
-          }
+            syslog(LOG_NOTICE, "Couldn't send to listen connection: %m");
           close(serverSocket);
           close(clientConnection);
           return -1;
         }
       }
+      if(logging == TESTING)
+        logServerToClient(listenBuf, recvBufSize);
     }
     
     if(recvBufSize < 0)
     {
       if(logging)
-      {
-        syslog(LOG_NOTICE, "Unexpected closure of server socket. Errno: %m");
-//        syslog(LOG_NOTICE, strerror(errno));
-      }
+        syslog(LOG_NOTICE, "Unexpected closure of server socket: %m");
       close(serverSocket);
       close(clientConnection);
       return -1;

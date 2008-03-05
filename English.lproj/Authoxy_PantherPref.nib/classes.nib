@@ -23,16 +23,25 @@
             SUPERCLASS = NSPreferencePane; 
         }, 
         {
+            CLASS = AuthoxyView; 
+            LANGUAGE = ObjC; 
+            OUTLETS = {fController = "Authoxy_PantherPref"; }; 
+            SUPERCLASS = NSView; 
+        }, 
+        {CLASS = AuthoxyWindow; LANGUAGE = ObjC; SUPERCLASS = NSWindow; }, 
+        {
             ACTIONS = {
                 changeMade = id; 
                 setAutoManualConfig = id; 
                 setNTLMConfig = id; 
                 startStop = id; 
+                testConnection = id; 
             }; 
             CLASS = "Authoxy_PantherPref"; 
             LANGUAGE = ObjC; 
             OUTLETS = {
                 bStartStop = NSButton; 
+                bTestConnection = NSButton; 
                 cExternalConnections = NSButton; 
                 cLogging = NSButton; 
                 cNTLMEnabled = NSButton; 

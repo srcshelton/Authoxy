@@ -53,29 +53,38 @@
 #define JSFILE
 #include "jsapi.h"
 
-#define ARG_AUTH	(argv[1])
-#define ARG_ADD		(argv[2])
-#define ARG_RPORT	(atoi(argv[3]))
-#define ARG_LPORT	(atoi(argv[4]))
-#define ARG_LOG		(argv[5][0]=='t')
-#define ARG_AUTO	(argv[6][0]=='t')
+#define ARG_AUTH    (argv[1])
+#define ARG_ADD     (argv[2])
+#define ARG_RPORT   (atoi(argv[3]))
+#define ARG_LPORT   (atoi(argv[4]))
+#define ARG_LPORT_STR (argv[4])
+#define ARG_LOGTEST (atoi(argv[5]))
+#define ARG_LOG     (ARG_LOGTEST==1)
+#define ARG_TEST		(ARG_LOGTEST==2)
+#define ARG_AUTO    (argv[6][0]=='t')
 #define ARG_EXTERN  (argv[7][0]=='t')
 #define ARG_DOMAIN  (argv[8])
 #define ARG_HOST    (argv[9])
 
+#define NO_LOGGING 0
+#define LOGGING    1
+#define TESTING    2
+
 //we can't put this in /var/run because we aren't root, so here'll do.
 #define AUTHOXYD_PID_PATH "/tmp/authoxyd.pid"
 #define AUTHOXYD_PORT_PATH "/tmp/authoxyd.port"
+#define AUTHOXYD_TEST_PATH "/tmp/authoxyd.test"
 
 struct NTLMSettings;  //forward declaration
 
-void performDaemonConnection(char *argADD, int argRPort, int clientConnection, char *authStr, char usingNTLM, struct NTLMSettings *theNTLMSettingsPtr, char logging);
-void performDaemonConnectionWithPACFile(JSFunction *compiledPAC, char *argADD, int argRPort, int clientConnection, char *authStr, char usingNTLM, struct NTLMSettings *theNTLMSettingsPtr, char logging);
+void performDaemonConnection(char *argADD, int argRPort, int clientConnection, char *authStr, char usingNTLM, struct NTLMSettings *theNTLMSettingsPtr, int logging);
+void performDaemonConnectionWithPACFile(JSFunction *compiledPAC, char *argADD, int argRPort, int clientConnection, char *authStr, char usingNTLM, struct NTLMSettings *theNTLMSettingsPtr, int logging);
 
 void fireman(int sig);
-void bufcpy(char *dst, const char *src, int len);
-void bufcat(char *dst, int dstLen, const char *src, int srcLen);
 int bufferMatchesStringAtIndex(const char *buffer, const char *string, int index);
+
+void logClientToServer(char *buf, int bufSize);
+void logServerToClient(char *buf, int bufSize);
 
 //connections
 #define INCOMING_BUF_SIZE 2048
@@ -87,17 +96,13 @@ int bufferMatchesStringAtIndex(const char *buffer, const char *string, int index
 #define CR		'\r'
 #define LF		'\n'
 
-//#define CRLF	"!@"
-//#define CR		'!'
-//#define LF		'@'
-
-int conductSession(int clientConnection, char authStr[], int serverSocket, char logging, struct NTLMSettings *theNTLMSettings);
+int conductSession(int clientConnection, char authStr[], int serverSocket, int logging, struct NTLMSettings *theNTLMSettings);
 int handleConnection(int listenSocket);
 int establishClientSide(int port, int maxpend, char external);
 int establishServerSide(char *hostname, unsigned short portnum);
-int conductClientSide(int clientConnection, char authStr[], int serverSocket, char logging);
-int conductClientSideDirectly(int clientConnection, int serverSocket, char logging);
-int conductServerSide(int clientConnection, int serverSocket, char logging);
+int conductClientSide(int clientConnection, char authStr[], int serverSocket, int logging);
+int conductClientSideDirectly(int clientConnection, int serverSocket, int logging);
+int conductServerSide(int clientConnection, int serverSocket, int logging);
 
 //NTLM
 struct NTLMSettings
@@ -216,26 +221,22 @@ struct type3Message
 #define AUTH_HEADER "Proxy-Authorization: NTLM "
 #define CONNECTION_CLOSE_HEADER "Connection: close"
 
-int establishNTLMAuthentication(int clientConnection, int *serverSocketPtr, char logging, struct NTLMSettings *theNTLMSettings);
-int establishNTLMAuthenticationParentOne(int clientConnection, int *serverSocketPtr, char logging, int *requestSizePtr, char **authenticatedRequestPtr, int *authHeaderSizePtr, int *authStringSizePtr, char **authStringPtr, char **requestBufPtr, int *indexForHeaderPtr, int *connectionClosePtr, int *connectionCloseHeaderSizePtr, struct sharedData *shmData, struct NTLMSettings *theNTLMSettings);
-int establishNTLMAuthenticationParentTwo(int clientConnection, int serverSocket, char logging, int requestSize, char *authenticatedRequest, int authHeaderSize, int authStringSize, char *authString, char *requestBuf, int indexForHeader, int connectionClose, int connectionCloseHeaderSize, struct sharedData *shmData, struct NTLMSettings *theNTLMSettings);
-int establishNTLMAuthenticationChildOne(int clientConnection, int serverSocket, char logging);
-int establishNTLMAuthenticationChildTwo(int clientConnection, int serverSocket, char logging);
+int establishNTLMAuthentication(int clientConnection, int *serverSocketPtr, int logging, struct NTLMSettings *theNTLMSettings);
+int establishNTLMAuthenticationParentOne(int clientConnection, int *serverSocketPtr, int logging, int *requestSizePtr, char **authenticatedRequestPtr, int *authHeaderSizePtr, int *authStringSizePtr, char **authStringPtr, char **requestBufPtr, int *indexForHeaderPtr, int *connectionClosePtr, int *connectionCloseHeaderSizePtr, struct sharedData *shmData, struct NTLMSettings *theNTLMSettings);
+int establishNTLMAuthenticationParentTwo(int clientConnection, int serverSocket, int logging, int requestSize, char *authenticatedRequest, int authHeaderSize, int authStringSize, char *authString, char *requestBuf, int indexForHeader, int connectionClose, int connectionCloseHeaderSize, struct sharedData *shmData, struct NTLMSettings *theNTLMSettings);
+int establishNTLMAuthenticationChildOne(int clientConnection, int serverSocket, int logging);
+int establishNTLMAuthenticationChildTwo(int clientConnection, int serverSocket, int logging);
 int establishNTLMParentSetup(struct sharedData **shmData, int *shmID);
 int establishNTLMChildSetup(struct sharedData **shmData, int clientConnection, pid_t *ppid);
 
 int establishNTLMGetType1String(char **authString, int *authStringSize, const char *domain, const char *workstation);
 int establishNTLMGetType1StringBase64(char **authString, int *authStringSize, const char *domain, const char *workstation);
-int establishNTLMParseType2String(char *authString, int authStringSize, char **nonce, char logging);
-int establishNTLMParseType2StringBase64(char *authString, int authStringSize, char **nonce, char logging);
+int establishNTLMParseType2String(char *authString, int authStringSize, char **nonce, int logging);
+int establishNTLMParseType2StringBase64(char *authString, int authStringSize, char **nonce, int logging);
 int establishNTLMGetType3String(char **authString, int *authStringSize, const char *username, const char *password, const char *host, const char *domain, const unsigned char *nonce);
 int establishNTLMGetType3StringBase64(char **authString, int *authStringSize, const char *username, const char *password, const char *host, const char *domain, const unsigned char *nonce);
 
 int establishNTLMGetHashedPassword(char **response, const char *password, const unsigned char *nonce);
-
-//convert a 4 byte value (a long) from big endian to little endian
-#define LITTLE_ENDIAN_4(x)    ( ((x&0x000000FF)<<24) | ((x&0x0000FF00)<<8) | ((x&0x00FF0000)>>8) | ((x&0xFF000000)>>24) )
-#define LITTLE_ENDIAN_2(x)    ( ((x&0x00FF)<<8) | ((x&0xFF00)>>8) )
 
 //jsInterface
 

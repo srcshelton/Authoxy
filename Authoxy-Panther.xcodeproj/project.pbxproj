@@ -10,23 +10,12 @@
 		45AA70CF05A042B000774A9C /* AuthoxyDaemon.c in Sources */ = {isa = PBXBuildFile; fileRef = 45AA70C305A042AF00774A9C /* AuthoxyDaemon.c */; };
 		45AA70D005A042B000774A9C /* AuthoxyDaemon.h in Headers */ = {isa = PBXBuildFile; fileRef = 45AA70C405A042AF00774A9C /* AuthoxyDaemon.h */; };
 		45AA70D105A042B000774A9C /* connections.c in Sources */ = {isa = PBXBuildFile; fileRef = 45AA70C505A042AF00774A9C /* connections.c */; };
-		45AA70D205A042B000774A9C /* jsapi.h in Headers */ = {isa = PBXBuildFile; fileRef = 45AA70C605A042AF00774A9C /* jsapi.h */; };
-		45AA70D305A042B000774A9C /* jsautocfg.h in Headers */ = {isa = PBXBuildFile; fileRef = 45AA70C705A042AF00774A9C /* jsautocfg.h */; };
-		45AA70D405A042B000774A9C /* jscompat.h in Headers */ = {isa = PBXBuildFile; fileRef = 45AA70C805A042AF00774A9C /* jscompat.h */; };
 		45AA70D505A042B000774A9C /* jsInterface.c in Sources */ = {isa = PBXBuildFile; fileRef = 45AA70C905A042AF00774A9C /* jsInterface.c */; };
-		45AA70D605A042B000774A9C /* jslong.h in Headers */ = {isa = PBXBuildFile; fileRef = 45AA70CA05A042AF00774A9C /* jslong.h */; };
-		45AA70D705A042B000774A9C /* jsosdep.h in Headers */ = {isa = PBXBuildFile; fileRef = 45AA70CB05A042AF00774A9C /* jsosdep.h */; };
-		45AA70D805A042B000774A9C /* jsotypes.h in Headers */ = {isa = PBXBuildFile; fileRef = 45AA70CC05A042AF00774A9C /* jsotypes.h */; };
-		45AA70D905A042B000774A9C /* jspubtd.h in Headers */ = {isa = PBXBuildFile; fileRef = 45AA70CD05A042AF00774A9C /* jspubtd.h */; };
-		45AA70DA05A042B000774A9C /* jstypes.h in Headers */ = {isa = PBXBuildFile; fileRef = 45AA70CE05A042AF00774A9C /* jstypes.h */; };
 		45AA70E205A0443300774A9C /* defaults.h in Headers */ = {isa = PBXBuildFile; fileRef = 45AA70E105A0443300774A9C /* defaults.h */; };
 		45AA70EE05A044D000774A9C /* Authoxy_PantherPref.icns in Resources */ = {isa = PBXBuildFile; fileRef = 45AA70ED05A044D000774A9C /* Authoxy_PantherPref.icns */; };
 		45AA70F305A0455300774A9C /* Authoxy_PantherPref.nib in Resources */ = {isa = PBXBuildFile; fileRef = 45AA70F105A0455300774A9C /* Authoxy_PantherPref.nib */; };
 		45AA711405A0483800774A9C /* base64.c in Sources */ = {isa = PBXBuildFile; fileRef = 45AA70E505A0444A00774A9C /* base64.c */; };
 		45AA711505A0483A00774A9C /* base64.h in Headers */ = {isa = PBXBuildFile; fileRef = 45AA70E605A0444A00774A9C /* base64.h */; };
-		45B0E5E005B2A35F009E8881 /* global.h in Headers */ = {isa = PBXBuildFile; fileRef = 45B0E5DD05B2A35F009E8881 /* global.h */; };
-		45B0E5E105B2A35F009E8881 /* md4.h in Headers */ = {isa = PBXBuildFile; fileRef = 45B0E5DE05B2A35F009E8881 /* md4.h */; };
-		45B0E5E205B2A35F009E8881 /* md4c.c in Sources */ = {isa = PBXBuildFile; fileRef = 45B0E5DF05B2A35F009E8881 /* md4c.c */; };
 		45D81DE805AAC1EE002570D8 /* base64.c in Sources */ = {isa = PBXBuildFile; fileRef = 45AA70E505A0444A00774A9C /* base64.c */; };
 		45D81DE905AAC1F1002570D8 /* base64.h in Headers */ = {isa = PBXBuildFile; fileRef = 45AA70E605A0444A00774A9C /* base64.h */; };
 		45FE231605A556E30006B484 /* NTLM.c in Sources */ = {isa = PBXBuildFile; fileRef = 45FE231505A556E30006B484 /* NTLM.c */; };
@@ -71,30 +60,18 @@
 		45AA70C305A042AF00774A9C /* AuthoxyDaemon.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = AuthoxyDaemon.c; sourceTree = "<group>"; };
 		45AA70C405A042AF00774A9C /* AuthoxyDaemon.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = AuthoxyDaemon.h; sourceTree = "<group>"; };
 		45AA70C505A042AF00774A9C /* connections.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = connections.c; sourceTree = "<group>"; };
-		45AA70C605A042AF00774A9C /* jsapi.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = jsapi.h; sourceTree = "<group>"; };
-		45AA70C705A042AF00774A9C /* jsautocfg.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = jsautocfg.h; sourceTree = "<group>"; };
-		45AA70C805A042AF00774A9C /* jscompat.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = jscompat.h; sourceTree = "<group>"; };
 		45AA70C905A042AF00774A9C /* jsInterface.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = jsInterface.c; sourceTree = "<group>"; };
-		45AA70CA05A042AF00774A9C /* jslong.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = jslong.h; sourceTree = "<group>"; };
-		45AA70CB05A042AF00774A9C /* jsosdep.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = jsosdep.h; sourceTree = "<group>"; };
-		45AA70CC05A042AF00774A9C /* jsotypes.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = jsotypes.h; sourceTree = "<group>"; };
-		45AA70CD05A042AF00774A9C /* jspubtd.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = jspubtd.h; sourceTree = "<group>"; };
-		45AA70CE05A042AF00774A9C /* jstypes.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = jstypes.h; sourceTree = "<group>"; };
 		45AA70E105A0443300774A9C /* defaults.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = defaults.h; sourceTree = "<group>"; };
 		45AA70E505A0444A00774A9C /* base64.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = base64.c; sourceTree = "<group>"; };
 		45AA70E605A0444A00774A9C /* base64.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = base64.h; sourceTree = "<group>"; };
 		45AA70ED05A044D000774A9C /* Authoxy_PantherPref.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = Authoxy_PantherPref.icns; sourceTree = "<group>"; };
 		45AA70F205A0455300774A9C /* English */ = {isa = PBXFileReference; lastKnownFileType = wrapper.nib; name = English; path = English.lproj/Authoxy_PantherPref.nib; sourceTree = "<group>"; };
-		45AA713A05A04A7600774A9C /* libcurl.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libcurl.a; path = /usr/local/lib/libcurl.a; sourceTree = "<absolute>"; };
-		45AA713B05A04A7600774A9C /* libdl.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libdl.a; path = /usr/local/lib/libdl.a; sourceTree = "<absolute>"; };
-		45AA713C05A04A7600774A9C /* libjs.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libjs.a; path = /usr/local/lib/libjs.a; sourceTree = "<absolute>"; };
 		45AA719005A04E9F00774A9C /* authoxyd */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.executable"; name = authoxyd; path = build/authoxyd; sourceTree = "<group>"; };
-		45AE0E0C059EF66E004686DA /* authoxyd */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = authoxyd; sourceTree = BUILT_PRODUCTS_DIR; };
+		45AE0E0C059EF66E004686DA /* authoxyd */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "compiled.mach-o.executable"; path = authoxyd; sourceTree = BUILT_PRODUCTS_DIR; };
 		45B0E5DD05B2A35F009E8881 /* global.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = global.h; sourceTree = "<group>"; };
-		45B0E5DE05B2A35F009E8881 /* md4.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = md4.h; sourceTree = "<group>"; };
-		45B0E5DF05B2A35F009E8881 /* md4c.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = md4c.c; sourceTree = "<group>"; };
 		45B5256E062E72FE00BF205D /* COPYING */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = text; path = COPYING; sourceTree = "<group>"; };
 		45B52592062F60A200BF205D /* Authoxy ReadMe.rtf */ = {isa = PBXFileReference; lastKnownFileType = text.rtf; name = "Authoxy ReadMe.rtf"; path = "Docs/Authoxy ReadMe.rtf"; sourceTree = "<group>"; };
+		45CD56150D2E680400F3918B /* libcurl.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libcurl.a; path = /usr/local/lib/libcurl.a; sourceTree = "<absolute>"; };
 		45FE231505A556E30006B484 /* NTLM.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = NTLM.c; sourceTree = "<group>"; };
 		8D202CF70486D31800D8A456 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		8D202CF80486D31800D8A456 /* Authoxy.prefPane */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = Authoxy.prefPane; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -134,9 +111,7 @@
 			children = (
 				1058C7ACFEA557BF11CA2CBB /* Linked Frameworks */,
 				1058C7AEFEA557BF11CA2CBB /* Other Frameworks */,
-				45AA713A05A04A7600774A9C /* libcurl.a */,
-				45AA713B05A04A7600774A9C /* libdl.a */,
-				45AA713C05A04A7600774A9C /* libjs.a */,
+				45CD56150D2E680400F3918B /* libcurl.a */,
 			);
 			name = "Frameworks and Libraries";
 			sourceTree = "<group>";
@@ -197,8 +172,6 @@
 				45AA70E605A0444A00774A9C /* base64.h */,
 				45AA70E505A0444A00774A9C /* base64.c */,
 				45B0E5DD05B2A35F009E8881 /* global.h */,
-				45B0E5DE05B2A35F009E8881 /* md4.h */,
-				45B0E5DF05B2A35F009E8881 /* md4c.c */,
 				32DBCFA20370C41700C91783 /* Authoxy-Panther_Prefix.pch */,
 			);
 			name = "Other Sources";
@@ -212,15 +185,7 @@
 				45AA70C405A042AF00774A9C /* AuthoxyDaemon.h */,
 				45AA70C505A042AF00774A9C /* connections.c */,
 				45FE231505A556E30006B484 /* NTLM.c */,
-				45AA70C605A042AF00774A9C /* jsapi.h */,
-				45AA70C705A042AF00774A9C /* jsautocfg.h */,
-				45AA70C805A042AF00774A9C /* jscompat.h */,
 				45AA70C905A042AF00774A9C /* jsInterface.c */,
-				45AA70CA05A042AF00774A9C /* jslong.h */,
-				45AA70CB05A042AF00774A9C /* jsosdep.h */,
-				45AA70CC05A042AF00774A9C /* jsotypes.h */,
-				45AA70CD05A042AF00774A9C /* jspubtd.h */,
-				45AA70CE05A042AF00774A9C /* jstypes.h */,
 			);
 			name = Daemon;
 			sourceTree = "<group>";
@@ -234,16 +199,6 @@
 			files = (
 				45D81DE905AAC1F1002570D8 /* base64.h in Headers */,
 				45AA70D005A042B000774A9C /* AuthoxyDaemon.h in Headers */,
-				45AA70D205A042B000774A9C /* jsapi.h in Headers */,
-				45AA70D305A042B000774A9C /* jsautocfg.h in Headers */,
-				45AA70D405A042B000774A9C /* jscompat.h in Headers */,
-				45AA70D605A042B000774A9C /* jslong.h in Headers */,
-				45AA70D705A042B000774A9C /* jsosdep.h in Headers */,
-				45AA70D805A042B000774A9C /* jsotypes.h in Headers */,
-				45AA70D905A042B000774A9C /* jspubtd.h in Headers */,
-				45AA70DA05A042B000774A9C /* jstypes.h in Headers */,
-				45B0E5E005B2A35F009E8881 /* global.h in Headers */,
-				45B0E5E105B2A35F009E8881 /* md4.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -365,7 +320,6 @@
 				45AA70D105A042B000774A9C /* connections.c in Sources */,
 				45AA70D505A042B000774A9C /* jsInterface.c in Sources */,
 				45FE231605A556E30006B484 /* NTLM.c in Sources */,
-				45B0E5E205B2A35F009E8881 /* md4c.c in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -454,16 +408,17 @@
 				GCC_ENABLE_FIX_AND_CONTINUE = NO;
 				GCC_WARN_FOUR_CHARACTER_CONSTANTS = NO;
 				GCC_WARN_UNKNOWN_PRAGMAS = NO;
+				HEADER_SEARCH_PATHS = /usr/local/include;
 				INSTALL_PATH = "$(HOME)/Library/PreferencePanes/Authoxy.prefPane/Contents/MacOS";
 				LIBRARY_SEARCH_PATHS = /usr/local/lib;
 				MACOSX_DEPLOYMENT_TARGET = 10.2;
 				OTHER_CFLAGS = "";
 				OTHER_LDFLAGS = (
-					"-lcurl",
+					/usr/local/lib/libcurl.a,
 					"-lssl",
+					"-lz",
 					"-lcrypto",
 					"-ljs",
-					"-ldl",
 				);
 				OTHER_REZFLAGS = "";
 				PRODUCT_NAME = authoxyd;

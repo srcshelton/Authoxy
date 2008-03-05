@@ -24,6 +24,7 @@
 
 #import "Authoxy_PantherPref.h"
 
+#include <unistd.h>
 #include <syslog.h>
 
 @implementation Authoxy_PantherPref
@@ -109,7 +110,7 @@
     lastLocalPort = [[NSMutableString alloc] initWithCapacity:32];
     [lastLocalPort setString:@"unknown"];
     
-    running = FALSE; //since the button is "Start Authoxy" by default
+    bRunning = FALSE; //since the button is "Start Authoxy" by default
     
     [fChanges setStringValue:@""];
     //Setup the authorization view
@@ -167,6 +168,8 @@
 {
   char *un=NULL, *pw=NULL;
 
+  CFPreferencesAppSynchronize(appID);
+  
   if(decodePassKey((char *)[(NSString*)CFPreferencesCopyAppValue( CFSTR(AP_Authorization), appID ) cString], &un, &pw))
   {
     //decode was unsuccessful, so fill in default values
@@ -225,6 +228,12 @@
   if([statusTimer respondsToSelector:@selector(setFireDate:)])
     if([statusTimer isValid])
       [statusTimer setFireDate:[NSDate dateWithTimeIntervalSinceNow:1]];
+  
+  //reset status of Option key
+  bOptionKeyIsDown = [[NSApp currentEvent] modifierFlags] & NSAlternateKeyMask;
+  
+  [[[self mainView] window] makeFirstResponder:fUsername];
+  
 }
 
 /**************************************************************/
@@ -288,8 +297,7 @@
       else
         [statusString setString:
           [NSString stringWithFormat:@"%d daemon running\non 127.0.0.1 port %@", count, lastLocalPort]];
-      [bStartStop setTitle:@"Stop Authoxy"];
-      running=TRUE;
+      bRunning=TRUE;
     }
     else
     {
@@ -299,19 +307,18 @@
       system("killall authoxyd"); //dangerous really. I don't think there will be other authoxyd's around, but
                                   //there may not be a killall program
       
-      [statusString setString:@"Not running"];
-      [bStartStop setTitle:@"Start Authoxy"];
-      running=FALSE;
+      [statusString setString:NOT_RUNNING_STRING];
+      bRunning=FALSE;
 //      daemonPID=-1;
     }
   }
   else
   {
-    [statusString setString:@"Fill settings in and\npress \"Start Authoxy\""];
-    [bStartStop setTitle:@"Start Authoxy"];
-    running=FALSE;
+    [statusString setString:NOT_RUNNING_INSTRUCTIONS_STRING];
+    bRunning=FALSE;
   }
-
+  [bStartStop setTitle:(bRunning ? STOP_BUTTON_TITLE : START_BUTTON_TITLE)];
+  [bTestConnection setEnabled:!bRunning];
   [fStatus setStringValue:statusString];
 
   if([[[tTabs selectedTabViewItem] identifier] isEqualToString:@"tvMessages"])
@@ -384,7 +391,7 @@
 /**************************************************************/
 - (IBAction)startStop:(id)sender
 {
-  if(!running)
+  if(!bRunning)
   {
     /* make sure settings are up to date */
     [self setSettings];
@@ -396,23 +403,23 @@
       NSTask *daemon = [NSTask launchedTaskWithLaunchPath:daemonPath arguments:[self getDaemonStartArgs]];
       
 //      [NSThread sleepUntilDate:[NSDate dateWithTimeIntervalSinceNow:10]];  //pause for two seconds before getting the PID
-  
-      //Note that this is just an educated guess at best. Because daemon() calls fork(), the PID could be
-      //anything. This only way to ensure we have the correct PID is to get the daemon to report it after
-      //becoming a daemon, and that is just what happens. The PID file is overwritten by the daemon when it starts
-      //and we retrieve the value from there during updateStatus.
+      
+    //Note that this is just an educated guess at best. Because daemon() calls fork(), the PID could be
+    //anything. This only way to ensure we have the correct PID is to get the daemon to report it after
+    //becoming a daemon, and that is just what happens. The PID file is overwritten by the daemon when it starts
+    //and we retrieve the value from there during updateStatus.
       daemonPID = [daemon processIdentifier] + 1; //plus one because it daemon and increments the PID
                                                   //(hope it doesn't loop or skip or something)
                                                   //WTF? As of 040112, it seems to be PID+2??? Today it's not. Watch this fix_prebinding!
-//      if([statusTimer respondsToSelector:@selector(setFireDate:)])
-//        [statusTimer setFireDate:[NSDate dateWithTimeIntervalSinceNow:0.5]];
+                                                  //      if([statusTimer respondsToSelector:@selector(setFireDate:)])
+                                                  //        [statusTimer setFireDate:[NSDate dateWithTimeIntervalSinceNow:0.5]];
     }
     else
     {
       if([statusTimer respondsToSelector:@selector(setFireDate:)])
         [statusTimer setFireDate:[NSDate distantFuture]];
       [fStatus setStringValue:@"Fatal Error: Daemon not found.\nReinstall Authoxy"];
-    }
+    }      
   }
   else
   {
@@ -424,6 +431,30 @@
     [man removeFileAtPath:AUTHOXYD_PID_PATH handler:nil];
     [man removeFileAtPath:AUTHOXYD_PORT_PATH handler:nil];
   }
+}
+
+/**************************************************************/
+/* testConnection                                             */
+/* Trial a connection attempt logging the connection traffic. */
+/**************************************************************/
+- (IBAction)testConnection:(id)sender
+{
+  if(bRunning) //you never know, the button might not have been disabled
+    return;
+  
+  [self setSettings];
+  [fChanges setStringValue:@""]; //hide the restart msg
+
+  NSString *daemonPath = [[NSBundle bundleWithIdentifier:@"net.hrsoftworks.AuthoxyPref"] pathForAuxiliaryExecutable:@"authoxyd"];
+  if(daemonPath != NULL)
+  {
+    NSArray *args = [self getDaemonStartArgs];
+    NSMutableArray *modifiedArgs = [NSMutableArray arrayWithArray:args];
+    [modifiedArgs replaceObjectAtIndex:daLogging withObject:ARGUMENT_TESTING];
+    [NSTask launchedTaskWithLaunchPath:daemonPath arguments:modifiedArgs];
+  }
+  else
+    [fStatus setStringValue:@"Fatal Error: Daemon not found.\nReinstall Authoxy"];
 }
 
 /**************************************************************/
@@ -477,7 +508,8 @@
 /**************************************************************/
 - (IBAction)changeMade:(id)sender
 {
-  [fChanges setStringValue:CHANGES_STRING];
+  if(bRunning)
+    [fChanges setStringValue:CHANGES_STRING];
 }
 
 /**************************************************************/
@@ -525,6 +557,8 @@
   else
     CFPreferencesSetAppValue(CFSTR(AP_NTLM), kCFBooleanFalse, appID);
   
+  CFPreferencesAppSynchronize(appID);
+  
   free(encoded);
 }
 
@@ -537,6 +571,8 @@
   /* get the commandline arguments for the daemon from the current settings */
   NSArray *args;
 
+  CFPreferencesAppSynchronize(appID);
+  
   if(CFBooleanGetValue(CFPreferencesCopyAppValue(CFSTR(AP_AutoConfig), appID)))
   {
     args = [NSArray arrayWithObjects:
@@ -545,7 +581,7 @@
       (NSString*)CFPreferencesCopyAppValue(CFSTR(AP_RemotePort), appID),
       (NSString*)CFPreferencesCopyAppValue(CFSTR(AP_LocalPort), appID),
       [NSString stringWithString:
-        (CFBooleanGetValue(CFPreferencesCopyAppValue(CFSTR(AP_Logging), appID)) ? @"true" : @"false")],
+        (CFBooleanGetValue(CFPreferencesCopyAppValue(CFSTR(AP_Logging), appID)) ? ARGUMENT_LOGGING : ARGUMENT_NO_LOGGING)],
       @"true",	//use auto config
       [NSString stringWithString:
         (CFBooleanGetValue(CFPreferencesCopyAppValue(CFSTR(AP_ExternalConnections), appID)) ? @"true" : @"false")],
@@ -559,7 +595,7 @@
       (NSString*)CFPreferencesCopyAppValue(CFSTR(AP_RemotePort), appID),
       (NSString*)CFPreferencesCopyAppValue(CFSTR(AP_LocalPort), appID),
       [NSString stringWithString:
-        (CFBooleanGetValue(CFPreferencesCopyAppValue(CFSTR(AP_Logging), appID)) ? @"true" : @"false")],
+        (CFBooleanGetValue(CFPreferencesCopyAppValue(CFSTR(AP_Logging), appID)) ? ARGUMENT_LOGGING : ARGUMENT_NO_LOGGING)],
       @"false",	//no auto config here
       [NSString stringWithString:
         (CFBooleanGetValue(CFPreferencesCopyAppValue(CFSTR(AP_ExternalConnections), appID)) ? @"true" : @"false")],

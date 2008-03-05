@@ -1,4 +1,4 @@
-{\rtf1\mac\ansicpg10000\cocoartf824\cocoasubrtf410
+{\rtf1\mac\ansicpg10000\cocoartf824\cocoasubrtf440
 {\fonttbl\f0\fswiss\fcharset77 Helvetica;\f1\fswiss\fcharset77 Helvetica-Bold;}
 {\colortbl;\red255\green255\blue255;}
 \vieww14540\viewh13180\viewkind0
@@ -29,29 +29,27 @@ You can even define a new location for these settings, which will make disabling
 
 \f1\b \ul Description:
 \f0\b0 \ulnone \
-If your connection to the Internet requires authenticating to a HTTP proxy, as is the case in many Australian universities, you may well have discovered that with Mac OS X, including Jaguar, many applications which require an Internet connection will simply fail. Some prominent examples are MacHelp, parts of Quicktime, parts of iTunes (CDDB, Net Radio), and Sherlock. This is rather limiting. Authoxy is my solution. I run it full time now, and never have to worry about authenticating with the proxy again.\
+If your connection to the Internet requires authenticating to a HTTP proxy, such as used in many universities and companies, you may well have discovered that many Mac OS X applications which require an Internet connection will simply fail. Some prominent examples are Software Update, MacHelp, parts of Quicktime, parts of iTunes (CDDB, Net Radio), and Sherlock. Authoxy may be the solution to never having to worry about authenticating with the proxy again.\
 \
 
 \f1\b \ul Important - NTLM users:
 \f0\b0 \ulnone \
-NTLM support in Authoxy is brand new. The authentication scheme is not published publicly anywhere, so all the work in Authoxy's NTLM support is based on reverse-engineering of the protocol undertaken by various communities. For that reason, support may be sketchy, and will break if Microsoft changes the scheme. Please take these things into consideration:\
+The NTLM authentication scheme is not published publicly anywhere, so all the work in Authoxy's NTLM support is based on reverse-engineering of the protocol undertaken by various communities. For that reason, support may be sketchy, and will break if Microsoft changes the scheme. Please take these things into consideration:\
 \
-1. If you can't get it working, turning on the logging option and restart the daemon. Use what appears in the messages tab in any bug reports.\
-2. Turn the logging option off and restart the daemon, if you are actually going to be using NTLM - it is very chatty for now and will quickly fill your logs, slowing down Authoxy a great deal.\
-3. I *have not* tested this on a Microsoft proxy! I do not have immediate access to one, so all testing was done on a Squid proxy. This means that I probably haven't tested your authentication scenario. Be prepared for failure!\
-4. I really don't know what the Domain/Host/Workstation options mean. Ask your sysadmin. To me, it seems to be another obfuscation of terms by Microsoft.\
-5. The NTLM scheme is huge! I cannot implement every signal option it provides, so I've tried to find the best trade off. If things are going to improve, I need copies of your logs for failed attempts.\
-6. Please use the Discuss mailing list to discuss connection issues. Since I really don't have any experience with MS Proxies, the best help you are going to get is by sharing your experience with others on that list.\
+1. If you can't get it working, turning on the logging option and test the connection in the Message tab. Use what appears in the messages tab and the /tmp/authoxy.test file in any bug reports.\
+2. If things are working for you, turn the logging option off and restart the daemon. Unnecessarily logging will quickly fill your logs, slowing down Authoxy a great deal.\
+5. The NTLM scheme is huge, complicated and not officially documented! Every single option has not been implemented, and there's no way to test every possible configuration. Support only improves with your logs for failed attempts.\
+6. Please use the Discuss mailing list to discuss connection issues.\
 \
 
-\f1\b \ul Manual Directions:
+\f1\b \ul Detailed instructions:
 \f0\b0 \ulnone \
 Authoxy requires that you set your proxy in System Preferences to the local machine, so that Authoxy can intercept proxy requests, and attach the authorization string before forwarding the requests on to the real proxy. To make this change, go to System Preferences->Network->Proxy, and fill in the HTTP Proxy Address field like so:\
 \
 Web Proxy (HTTP): 127.0.0.1	Port: 8080\
 Secure Web Proxy: 127.0.0.1	Port: 8080   <-- only set this one if your proxy supports HTTPS!\
 \
-If you already use port 8080 on your machine for something else (for example, you run your own proxy), you can choose a different port for Authoxy. In that case, change the Port setting in the Network preferences pane to your own selection (something between 8000 and 8999 is reasonable).\
+If you already use port 8080 on your machine for something else (for example, you run your own proxy), you can choose a different port for Authoxy. In that case, change the Port setting in the Network preferences pane to your own selection (something between 8000 and 8999 is standard).\
 \
 Next, drop the Authoxy.prefPane into your PreferencePanes folder. Create this folder if it doesn't exist (it must be spelt exactly as seen in this ReadMe), in one of the following locations:\
 \
@@ -69,18 +67,18 @@ You can keep an eye on the status text in the preference pane, which should chan
 
 \f1\b \ul What if it doesn't work?
 \f0\b0 \ulnone \
-Bummer. Authoxy has improved a great deal, but testing for the unlimited configurations in the real world is impossible. That's why I appreciate any feedback you can provide.\
+Bummer. Authoxy has improved a great deal, but testing for the unlimited configurations in the real world is impossible. That's why any feedback you can provide is provided.\
 \
 First check the messages tab in Authoxy's preference pane. Authoxy occasionally writes error messages there. Also check the support page at <http://www.hrsoftworks.net/support.html>. That page gets updated with problems which surface after Authoxy is released.\
 \
 Authoxy does not work for all authentication schemes. In fact, it only supports the 'Basic:' (very common in Squid proxies and others)  and the NTLM method (common in Microsoft proxies). If your proxy requires Digest or Kerberos authentication, write to me and request it. \
 \
-Other errors are certainly possible. With your help, I will be able to fix them, and continue to improve Authoxy.\
+*NEW* in version 3.4 is the ability to "test" the connection. Switch to the Messages tab and click the Test Connection button to produce a detailed log of the network traffic.\
 \
 
 \f1\b \ul Legal Crap:
 \f0\b0 \ulnone \
-I wrote Authoxy, which I reckon entitles me to copyright. You are free to pass it on to whomever you like, as long as this ReadMe goes with it! I hereby disclaim any blame for breaking anything, you use this software at your own risk. I think it is very safe.\
+I wrote Authoxy, which I reckon entitles me to copyright. You are free to pass it on to whomever you like, as long as this ReadMe goes with it. I hereby disclaim any blame for breaking anything, you use this software at your own risk. I think it is very safe.\
 \
 
 \f1\b \ul Pricing / Licensing
@@ -100,7 +98,7 @@ Site:				https://www.paypal.com/xclick/business=hraftery%40myrealbox.com&item_na
 
 \f1\b \ul Contact:
 \f0\b0 \ulnone \
-Please consider using the HRSoftWorks-Discuss mailing list for any correspondence. Regrettably, I can no longer afford the time to reply to every email individually, and using the list would cut down my workload considerably, which means more development for Authoxy! You can subscribe to the lists at <http://www.hrsoftworks.net>.\
+Please consider using the HRSoftWorks-Discuss mailing list for any correspondence. Regrettably, I can no longer find the time to reply to every email individually, and using the list would cut down my workload considerably, which means more development for Authoxy! You can subscribe to the lists at <http://www.hrsoftworks.net>.\
 \
 Heath Raftery\
 heath@hrsoftworks.net\
@@ -110,6 +108,18 @@ HRSoftWorks\
 
 \f1\b \ul Change log:
 \f0\b0 \ulnone \
+\
+V3.4\
+* Updated for Leopard.\
+** Fixed problem with the preferences not being saved.\
+** Rewrote the routines dealing with Intel and PPC endianess.\
+* Updated to SpiderMonkey 1.7.0 static library.\
+* Updated to libcurl 7.17.1 static library.\
+* Updated to the OpenSSL 0.9.7 DES and MD4 routines.\
+* Fixed a potential bug in base64 password encoding.\
+* Improved some memory copying routines.\
+* Major: added the ability to "test" the connection, logging detailed network traffic to file.\
+* Improved consistency and detail in the reporting of many of the exceptional situations.\
 \
 V3.3\
 * Fixed some niggling issues with the move to Universal Binary\

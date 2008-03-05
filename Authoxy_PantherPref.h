@@ -47,6 +47,29 @@ typedef struct kinfo_proc kinfo_proc;
 #define CHANGES_STRING    @"Changes will not take affect until Authoxy is stopped and restarted."
 #define MAX_LOG_SIZE      750000
 
+#define ARGUMENT_NO_LOGGING @"0"
+#define ARGUMENT_LOGGING    @"1"
+#define ARGUMENT_TESTING    @"2"
+
+enum eDaemonArguments
+{
+  daAuthorization,
+  daAddress,
+  daRemotePort,
+  daLocalPort,
+  daLogging,
+  daAutoConfiguration,
+  daExternConnections,
+  daNTLMDomain,
+  daNTLMHost
+};
+
+#define STOP_BUTTON_TITLE               @"Stop Authoxy"
+#define START_BUTTON_TITLE              @"Start Authoxy"
+
+#define NOT_RUNNING_STRING              @"Not running"
+#define NOT_RUNNING_INSTRUCTIONS_STRING @"Fill your settings in and then press \"Start Authoxy\"."
+
 @interface Authoxy_PantherPref : NSPreferencePane 
 {
 //  IBOutlet SFAuthorizationView *aAuthorization;
@@ -60,6 +83,8 @@ typedef struct kinfo_proc kinfo_proc;
   IBOutlet NSTextField*   fUsername;
   IBOutlet NSTextField*   fStatus;
   IBOutlet NSTextField*   fChanges;
+  IBOutlet NSButton*      bStartStop;
+  IBOutlet NSButton*      bTestConnection;
   IBOutlet NSButton*      cLogging;
   IBOutlet NSButton*      cPromptForCredentials;
   IBOutlet NSButtonCell*  rAutoConfig;
@@ -79,17 +104,17 @@ typedef struct kinfo_proc kinfo_proc;
   int daemonPort;
   
   NSTimer *statusTimer;
-  IBOutlet NSButton *bStartStop;
   
   NSMutableString *lastLocalPort;
   NSDate *lastSysModDate;
   NSDate *lastPIDModDate;
   NSDate *lastPortModDate;
   
-  bool running;
+  bool bRunning;
 }
 
 - (IBAction)startStop:(id)sender;
+- (IBAction)testConnection:(id)sender;
 - (IBAction)setAutoManualConfig:(id)sender;
 - (IBAction)setNTLMConfig:(id)sender;
 - (IBAction)changeMade:(id)sender;

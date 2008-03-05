@@ -156,7 +156,7 @@ char *encodeString(char *inString, int *length)
   int i, inc=0, outc=0, len;
   
   //outString is 133% the size of inString.
-  outString = (char *)malloc( (*length*sizeof(char)*4)/3);
+  outString = (char *)malloc( 4 * ((*length + 2)/3));  //+2 allows rounding up to the next multiple of 3 to allow enough groups of 4
     
   while(inc<=*length)
   {
