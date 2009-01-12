@@ -297,13 +297,10 @@
     {
       //if we get here, then the PID in the file does not match any running daemons. In other words we are out of
       //sync with the daemon. This may happen if the .pid file disappears while the daemon is running. In an attempt
-      //to regain contact, we'll try force quitting the daemon. Not sure if killall always exists though!
-      system("killall authoxyd"); //dangerous really. I don't think there will be other authoxyd's around, but
-                                  //there may not be a killall program
-      
+      //to regain contact, we'll try force quitting the daemon.
       [statusString setString:NOT_RUNNING_STRING];
+      [self stopDaemon];
       bRunning=FALSE;
-//      daemonPID=-1;
     }
   }
   else
@@ -340,12 +337,12 @@
           {
             [logStr getLineStart:&myRange.location end:&endIndex contentsEnd:nil forRange:myRange];
             myRange.length=endIndex-myRange.location;
-            mySearchRange = [logStr rangeOfString:@"authoxyd: " options:0 range:myRange];
+            mySearchRange = [logStr rangeOfString:@"/authoxyd" options:0 range:myRange];
             if(mySearchRange.length != 0)
             {
               myRange.length = 16; //size of time stamp
               [authLogStr appendString:[logStr substringWithRange:myRange]];
-              mySearchRange.location += 8;  //skip the search word
+              mySearchRange.location += 9;  //skip the search word
               mySearchRange.length = endIndex-mySearchRange.location;
               [authLogStr appendString:[logStr substringWithRange:mySearchRange]];
             }
@@ -416,15 +413,22 @@
     }      
   }
   else
-  {
-//    NSString *kill = [NSString stringWithFormat:@"kill %d", daemonPID];
-    system("killall -CONT authoxyd"); //wake the silly buggers up
-    system("killall authoxyd");       //and then kill them!!
-    
-    NSFileManager *man = [NSFileManager defaultManager];
-    [man removeFileAtPath:AUTHOXYD_PID_PATH handler:nil];
-    [man removeFileAtPath:AUTHOXYD_PORT_PATH handler:nil];
-  }
+    [self stopDaemon];
+}
+
+/**************************************************************/
+/* stopDaemon                                                 */
+/* kill the daemon processes and clean up                     */
+/**************************************************************/
+- (void)stopDaemon
+{
+  //    NSString *kill = [NSString stringWithFormat:@"kill %d", daemonPID];
+  system("killall -CONT authoxyd"); //wake the silly buggers up
+  system("killall authoxyd");       //and then kill them!!
+  
+  NSFileManager *man = [NSFileManager defaultManager];
+  [man removeFileAtPath:AUTHOXYD_PID_PATH handler:nil];
+  [man removeFileAtPath:AUTHOXYD_PORT_PATH handler:nil];  
 }
 
 /**************************************************************/

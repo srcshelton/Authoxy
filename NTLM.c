@@ -378,11 +378,12 @@ int establishNTLMAuthenticationParentTwo(int clientConnection, int serverSocket,
   authStringSize=0;
 
   if(logging)
-  syslog(LOG_NOTICE, "Entering Step 5");
+    syslog(LOG_NOTICE, "Entering Step 5");
   shmData->step5Started=1;
   /*****Step 5 - Client resubmits request to proxy, with a Type 3 authorization message*****/
-  unsigned char nonce[8];
+  unsigned char nonce[9];
   memcpy((char*)nonce, shmData->nonce, 8);
+  nonce[8] = '\0';
 
   if(establishNTLMGetType3StringBase64(&authString, &authStringSize, theNTLMSettings->username, theNTLMSettings->password, theNTLMSettings->host, theNTLMSettings->domain, nonce))
     return 1;
@@ -644,7 +645,7 @@ int establishNTLMAuthenticationChildTwo(int clientConnection, int serverSocket, 
   }
   //otherwise, step 4 is complete
   if(logging)
-    syslog(LOG_NOTICE, "The nonce is: %8s.", nonce);
+    logHex("The nonce is", (unsigned char*)nonce, 8);
   memcpy(shmData->nonce, nonce, 8);
   free(nonce);
 
@@ -1057,7 +1058,7 @@ int establishNTLMGetType3StringBase64(char **authString, int *authStringSize, co
 * turns a 56 bit key into the 64 bit, odd parity key and sets the key.
 * The key schedule ks is also set.
 */
-void SetupDESKey(unsigned char key56[], DES_key_schedule ks)
+void SetupDESKey(unsigned char key56[], DES_key_schedule *ks)
 {
   DES_cblock key;
 
@@ -1071,7 +1072,7 @@ void SetupDESKey(unsigned char key56[], DES_key_schedule ks)
   key[7] =  (key56[6] << 1) & 0xFF;
 
   DES_set_odd_parity(&key);
-  DES_set_key(&key, &ks);
+  DES_set_key_unchecked(&key, ks);
 };
 
 //ex-nested function 2
@@ -1084,13 +1085,13 @@ void CalculateResponse(unsigned char *keys, const unsigned char *plaintext, unsi
 {
   DES_key_schedule ks;
   
-  SetupDESKey(keys, ks);
+  SetupDESKey(keys, &ks);
   DES_ecb_encrypt((DES_cblock*)plaintext, (DES_cblock*)results, &ks, DES_ENCRYPT);
   
-  SetupDESKey(&keys[7], ks);
+  SetupDESKey(&keys[7], &ks);
   DES_ecb_encrypt((DES_cblock*)plaintext, (DES_cblock*)(&results[8]), &ks, DES_ENCRYPT);
   
-  SetupDESKey(&keys[14], ks);
+  SetupDESKey(&keys[14], &ks);
   DES_ecb_encrypt((DES_cblock*)plaintext, (DES_cblock*)(&results[16]), &ks, DES_ENCRYPT);
 };
 
@@ -1111,11 +1112,11 @@ int establishNTLMGetHashedPassword(char **response, const char *password, const 
   unsigned char LMHashedPassword[21];
   DES_key_schedule ks;
   
-  SetupDESKey(LMPassword, ks);
+  SetupDESKey(LMPassword, &ks);
   DES_ecb_encrypt((const_DES_cblock*)magic, (DES_cblock*)LMHashedPassword, &ks, DES_ENCRYPT);  //NOTE: kinda dodge - maybe I should learn this DES shit and do it properly
                                                                                               //atm, the DES_ENCRYPT is a guess, there is typecasting, the man page recommends not using
                                                                                               //these functions directly, and I'm forced to use old OpenSSL stuff
-  SetupDESKey(&LMPassword[7], ks);
+  SetupDESKey(&LMPassword[7], &ks);
   DES_ecb_encrypt((const_DES_cblock*)magic, (DES_cblock*)&LMHashedPassword[8], &ks, DES_ENCRYPT);
   
   memset(&LMHashedPassword[16], 0, 5);

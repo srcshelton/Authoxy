@@ -67,7 +67,7 @@
 		45AA70ED05A044D000774A9C /* Authoxy_PantherPref.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = Authoxy_PantherPref.icns; sourceTree = "<group>"; };
 		45AA70F205A0455300774A9C /* English */ = {isa = PBXFileReference; lastKnownFileType = wrapper.nib; name = English; path = English.lproj/Authoxy_PantherPref.nib; sourceTree = "<group>"; };
 		45AA719005A04E9F00774A9C /* authoxyd */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.executable"; name = authoxyd; path = build/authoxyd; sourceTree = "<group>"; };
-		45AE0E0C059EF66E004686DA /* authoxyd */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "compiled.mach-o.executable"; path = authoxyd; sourceTree = BUILT_PRODUCTS_DIR; };
+		45AE0E0C059EF66E004686DA /* authoxyd */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = authoxyd; sourceTree = BUILT_PRODUCTS_DIR; };
 		45B0E5DD05B2A35F009E8881 /* global.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = global.h; sourceTree = "<group>"; };
 		45B5256E062E72FE00BF205D /* COPYING */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = text; path = COPYING; sourceTree = "<group>"; };
 		45B52592062F60A200BF205D /* Authoxy ReadMe.rtf */ = {isa = PBXFileReference; lastKnownFileType = text.rtf; name = "Authoxy ReadMe.rtf"; path = "Docs/Authoxy ReadMe.rtf"; sourceTree = "<group>"; };
@@ -261,9 +261,11 @@
 		089C1669FE841209C02AAC07 /* Project object */ = {
 			isa = PBXProject;
 			buildConfigurationList = 458B28140B3DF2720040372F /* Build configuration list for PBXProject "Authoxy-Panther" */;
+			compatibilityVersion = "Xcode 2.4";
 			hasScannedForEncodings = 1;
 			mainGroup = 089C166AFE841209C02AAC07 /* Authoxy-Panther */;
 			projectDirPath = "";
+			projectRoot = "";
 			targets = (
 				8D202CE80486D31800D8A456 /* Authoxy-Panther */,
 				45AE0E0B059EF66E004686DA /* authoxyd */,
@@ -518,6 +520,7 @@
 				GCC_WARN_UNKNOWN_PRAGMAS = NO;
 				HEADER_SEARCH_PATHS = "";
 				INFOPLIST_FILE = Info.plist;
+				INSTALL_MODE_FLAG = "go-w,a+rX";
 				INSTALL_PATH = /Users/liteyear/Library/PreferencePanes;
 				LIBRARY_SEARCH_PATHS = "";
 				LIBRARY_STYLE = Bundle;

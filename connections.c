@@ -235,8 +235,17 @@ int conductClientSide(int clientConnection, char authStr[], int serverSocket, in
          (listenBuf[0]=='H' && listenBuf[1]=='E' && listenBuf[2]=='A' && listenBuf[3]=='D') ||
          (listenBuf[0]=='P' && listenBuf[1]=='U' && listenBuf[2]=='T') ||
          (listenBuf[0]=='D' && listenBuf[1]=='E' && listenBuf[2]=='L' && listenBuf[3]=='E' && listenBuf[4]=='T' && listenBuf[5]=='E') ||
-         (listenBuf[0]=='T' && listenBuf[1]=='R' && listenBuf[2]=='A' && listenBuf[3]=='C' && listenBuf[4]=='E'))
-         )//list of headers above from RFC2616, pg 24
+         (listenBuf[0]=='T' && listenBuf[1]=='R' && listenBuf[2]=='A' && listenBuf[3]=='C' && listenBuf[4]=='E') ||
+         //list of headers above from RFC2616, pg 24
+         (listenBuf[0]=='P' && listenBuf[1]=='R' && listenBuf[2]=='O' && listenBuf[3]=='P' && listenBuf[4]=='F' && listenBuf[5]=='I' && listenBuf[6]=='N' && listenBuf[7]=='D') ||
+         (listenBuf[0]=='P' && listenBuf[1]=='R' && listenBuf[2]=='O' && listenBuf[3]=='P' && listenBuf[4]=='P' && listenBuf[5]=='A' && listenBuf[6]=='T' && listenBuf[7]=='C' && listenBuf[8]=='H') ||
+         (listenBuf[0]=='M' && listenBuf[1]=='K' && listenBuf[2]=='C' && listenBuf[3]=='O' && listenBuf[4]=='L') ||
+         (listenBuf[0]=='C' && listenBuf[1]=='O' && listenBuf[2]=='P' && listenBuf[3]=='Y') ||
+         (listenBuf[0]=='M' && listenBuf[1]=='O' && listenBuf[2]=='V' && listenBuf[3]=='E') ||
+         (listenBuf[0]=='L' && listenBuf[1]=='O' && listenBuf[2]=='C' && listenBuf[3]=='K') ||
+         (listenBuf[0]=='U' && listenBuf[1]=='N' && listenBuf[2]=='L' && listenBuf[3]=='O' && listenBuf[4]=='C' && listenBuf[5]=='K'))
+         //list of headers above from WebDAV extensions
+        )
         endHeader=0; //looks like a new header
 
 //      syslog(LOG_NOTICE, "just recv'ed");      

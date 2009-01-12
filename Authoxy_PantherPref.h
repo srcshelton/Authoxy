@@ -130,6 +130,7 @@ enum eDaemonArguments
 - (void)didUnselect;
 
 - (void)setSettings;
+- (void)stopDaemon;
 
 - (NSArray *)getDaemonStartArgs;
 

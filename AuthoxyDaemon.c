@@ -434,3 +434,19 @@ void logServerToClient(char *buf, int bufSize)
   }
   umask(oldMask);
 }
+
+void logHex(char *msg, unsigned char *buf, int bufSize)
+{
+  char hexBuf[bufSize*2 + 1];
+  int i;
+  for(i=0; i<bufSize; i++)
+  {
+    hexBuf[i*2]   = (buf[i] & 0xF0) > 0x90 ? (((buf[i] & 0xF0) - 0xA0) >> 4) + 'A' :
+                                             ((buf[i] & 0xF0) >> 4) + '0';
+    hexBuf[i*2+1] = (buf[i] & 0x0F) > 0x09 ? ((buf[i] & 0x0F) - 0x0A) + 'A' :
+                                             (buf[i] & 0x0F) + '0';
+  }
+  hexBuf[i*2] = '\0';
+  
+  syslog(LOG_NOTICE, "%s: %s", msg, hexBuf);
+}

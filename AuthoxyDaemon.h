@@ -85,6 +85,7 @@ int bufferMatchesStringAtIndex(const char *buffer, const char *string, int index
 
 void logClientToServer(char *buf, int bufSize);
 void logServerToClient(char *buf, int bufSize);
+void logHex(char *msg, unsigned char *buf, int bufSize);
 
 //connections
 #define INCOMING_BUF_SIZE 2048
