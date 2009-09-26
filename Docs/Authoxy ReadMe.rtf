@@ -1,39 +1,38 @@
-{\rtf1\mac\ansicpg10000\cocoartf824\cocoasubrtf440
-{\fonttbl\f0\fswiss\fcharset77 Helvetica;\f1\fswiss\fcharset77 Helvetica-Bold;}
+{\rtf1\ansi\ansicpg1252\cocoartf1038\cocoasubrtf110
+{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
 {\colortbl;\red255\green255\blue255;}
-\vieww14540\viewh13180\viewkind0
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\ql\qnatural
 
 \f0\fs48 \cf0 Authoxy
 \fs24 \
 \pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\ql\qnatural
 
-\f1\b \cf0 By Heath Raftery
-\f0\b0 \
+\b \cf0 By Heath Raftery
+\b0 \
 \
 A lightweight proxy server providing seamless, system wide authentication to your regular HTTP and HTTPS proxy.\
 \
 
-\f1\b \ul Quick Setup:
-\f0\b0 \ulnone \
+\b \ul Quick Setup:
+\b0 \ulnone \
 In case you hate ReadMe's, here's the gist (you may want to make a note of these instructions):\
 \
 After install, you have 3 things to do:\
 1. Go to System Preferences, where an extra icon should appear. Set up and start Authoxy by clicking this new icon.\
-2. Go to Network->Proxies in System Preferences and add the following information to Web Proxy (HTTP) and if you desire, Secure Web Proxy as well:\
+2. Go to Network->Advanced->Proxies in System Preferences and add the following information to Web Proxy (HTTP) and if you desire, Secure Web Proxy as well:\
 Proxy:	127.0.0.1\
 Port:	8080 (or if you chose a different local port in Authoxy's settings, use that)\
 You can even define a new location for these settings, which will make disabling Authoxy as easy as switching locations.\
 3. If you want Authoxy to start when you restart your computer, install the optional startAuthoxy application (which is installed by default) and add it to your Login Items in System Preferences. You will also need startAuthoxy if you choose to use the Location X plug-in, lxAuthoxy.\
 \
 
-\f1\b \ul Description:
-\f0\b0 \ulnone \
+\b \ul Description:
+\b0 \ulnone \
 If your connection to the Internet requires authenticating to a HTTP proxy, such as used in many universities and companies, you may well have discovered that many Mac OS X applications which require an Internet connection will simply fail. Some prominent examples are Software Update, MacHelp, parts of Quicktime, parts of iTunes (CDDB, Net Radio), and Sherlock. Authoxy may be the solution to never having to worry about authenticating with the proxy again.\
 \
 
-\f1\b \ul Important - NTLM users:
-\f0\b0 \ulnone \
+\b \ul Important - NTLM users:
+\b0 \ulnone \
 The NTLM authentication scheme is not published publicly anywhere, so all the work in Authoxy's NTLM support is based on reverse-engineering of the protocol undertaken by various communities. For that reason, support may be sketchy, and will break if Microsoft changes the scheme. Please take these things into consideration:\
 \
 1. If you can't get it working, turning on the logging option and test the connection in the Message tab. Use what appears in the messages tab and the /tmp/authoxy.test file in any bug reports.\
@@ -42,9 +41,9 @@ The NTLM authentication scheme is not published publicly anywhere, so all the wo
 6. Please use the Discuss mailing list to discuss connection issues.\
 \
 
-\f1\b \ul Detailed instructions:
-\f0\b0 \ulnone \
-Authoxy requires that you set your proxy in System Preferences to the local machine, so that Authoxy can intercept proxy requests, and attach the authorization string before forwarding the requests on to the real proxy. To make this change, go to System Preferences->Network->Proxy, and fill in the HTTP Proxy Address field like so:\
+\b \ul Detailed instructions:
+\b0 \ulnone \
+Authoxy requires that you set your proxy in System Preferences to the local machine, so that Authoxy can intercept proxy requests, and attach the authorization string before forwarding the requests on to the real proxy. To make this change, go to System Preferences->Network->Advanced->Proxy, and fill in the HTTP Proxy Address field like so:\
 \
 Web Proxy (HTTP): 127.0.0.1	Port: 8080\
 Secure Web Proxy: 127.0.0.1	Port: 8080   <-- only set this one if your proxy supports HTTPS!\
@@ -65,24 +64,24 @@ If all is well, in a second or two the text on the right side of the pane will c
 You can keep an eye on the status text in the preference pane, which should change to show how many daemons are currently running. When Authoxy is idle, just one daemon should be running, but when loading complex web pages, there can be quite a few running at once.\
 \
 
-\f1\b \ul What if it doesn't work?
-\f0\b0 \ulnone \
+\b \ul What if it doesn't work?
+\b0 \ulnone \
 Bummer. Authoxy has improved a great deal, but testing for the unlimited configurations in the real world is impossible. That's why any feedback you can provide is provided.\
 \
-First check the messages tab in Authoxy's preference pane. Authoxy occasionally writes error messages there. Also check the support page at <http://www.hrsoftworks.net/support.html>. That page gets updated with problems which surface after Authoxy is released.\
+First check the messages tab in Authoxy's preference pane. Authoxy occasionally writes error messages there. Also check the support page at <http://www.hrsoftworks.net/Support.php>. That page gets updated with problems which surface after Authoxy is released.\
 \
 Authoxy does not work for all authentication schemes. In fact, it only supports the 'Basic:' (very common in Squid proxies and others)  and the NTLM method (common in Microsoft proxies). If your proxy requires Digest or Kerberos authentication, write to me and request it. \
 \
 *NEW* in version 3.4 is the ability to "test" the connection. Switch to the Messages tab and click the Test Connection button to produce a detailed log of the network traffic.\
 \
 
-\f1\b \ul Legal Crap:
-\f0\b0 \ulnone \
+\b \ul Legal Crap:
+\b0 \ulnone \
 I wrote Authoxy, which I reckon entitles me to copyright. You are free to pass it on to whomever you like, as long as this ReadMe goes with it. I hereby disclaim any blame for breaking anything, you use this software at your own risk. I think it is very safe.\
 \
 
-\f1\b \ul Pricing / Licensing
-\f0\b0 \ulnone \
+\b \ul Pricing / Licensing
+\b0 \ulnone \
 Authoxy takes some time to support. Sadly, I can no longer afford the time for free. I will not cripple Authoxy, and you are welcome to trial it for free, but if you find it useful, or want support from me, I would appreciate some compensation. My pricing scheme follows (all prices in US dollars, despite me not living in that country, since it seems to suit the majority of users):\
 \
 Student or education user:	$US5\
@@ -96,8 +95,8 @@ Private: 			https://www.paypal.com/xclick/business=hraftery%40myrealbox.com&item
 Site:				https://www.paypal.com/xclick/business=hraftery%40myrealbox.com&item_name=Authoxy&item_number=1.0.0&amount=120.00&no_note=1&tax=0&currency_code=USD\
 \
 
-\f1\b \ul Contact:
-\f0\b0 \ulnone \
+\b \ul Contact:
+\b0 \ulnone \
 Please consider using the HRSoftWorks-Discuss mailing list for any correspondence. Regrettably, I can no longer find the time to reply to every email individually, and using the list would cut down my workload considerably, which means more development for Authoxy! You can subscribe to the lists at <http://www.hrsoftworks.net>.\
 \
 Heath Raftery\
@@ -106,8 +105,16 @@ HRSoftWorks\
 <http://www.hrsoftworks.net>\
 \
 
-\f1\b \ul Change log:
-\f0\b0 \ulnone \
+\b \ul Change log:
+\b0 \ulnone \
+\
+V3.5\
+* Updated for Snow Leopard.\
+** Both Authoxy and authoxyd are 64 bit compatible\
+* Changed to dynamic libraries for curl, ssl, z and crypto, targeting OS X 10.5.\
+* Added x86_64 architecture to SpiderMonkey library.\
+* Fixed a bunch of potential memory leaks in both the Pref Pane and the daemon.\
+* Handled an occasional EINTR error when establishing communication.\
 \
 V3.4\
 * Updated for Leopard.\

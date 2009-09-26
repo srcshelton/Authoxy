@@ -147,9 +147,30 @@ int establishServerSide(char *hostname, unsigned short portnum)
   }
   if(connect(talkSocket, (struct sockaddr *)&talkSockAddr, sizeof(struct sockaddr_in)) < 0)		//connect to talker socket
   {
-    close(talkSocket);
-    syslog(LOG_ERR, "Fatal Error. Unable to connect to talker socket: %m");
-    return -1;
+    if(errno == EINTR) //apparently this may happen, and we just try again
+    {
+//      syslog(LOG_ERR, "Interrupt signal received while connecting to talker socket. Trying again.");
+      syslog(LOG_ERR, "Interrupt signal received while connecting to talker socket. Continuing.");
+/*
+      while(connect(talkSocket, (struct sockaddr *)&talkSockAddr, sizeof(struct sockaddr_in)) < 0)
+      {
+        if(errno != EINTR)
+        {
+          close(talkSocket);
+          syslog(LOG_ERR, "Fatal Error. Unable to connect to talker socket: %m");
+          return -1;
+        }
+        else
+          syslog(LOG_ERR, "Interrupt signal received while connecting to talker socket. Trying again.");
+      }
+ */
+    }
+    else
+    {
+      close(talkSocket);
+      syslog(LOG_ERR, "Fatal Error. Unable to connect to talker socket: %m");
+      return -1;             
+    }
   }
   
   if(hostname)

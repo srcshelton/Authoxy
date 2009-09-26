@@ -48,26 +48,32 @@
     value = CFPreferencesCopyAppValue(CFSTR(AP_Authorization), appID);
     if (!(value && CFGetTypeID(value) == CFStringGetTypeID()))
       CFPreferencesSetAppValue(CFSTR(AP_Authorization), @"Undefined", appID);
+    CFRelease(value);
 
     value = CFPreferencesCopyAppValue(CFSTR(AP_Address), appID);
     if (!(value && CFGetTypeID(value) == CFStringGetTypeID()))
       CFPreferencesSetAppValue(CFSTR(AP_Address), @"proxy.myhost.edu.au", appID);
+    CFRelease(value);
 
     value = CFPreferencesCopyAppValue(CFSTR(AP_RemotePort), appID);
     if (!(value && CFGetTypeID(value) == CFStringGetTypeID()))
       CFPreferencesSetAppValue(CFSTR(AP_RemotePort), @"8080", appID);
+    CFRelease(value);
 
     value = CFPreferencesCopyAppValue(CFSTR(AP_LocalPort), appID);
     if (!(value && CFGetTypeID(value) == CFStringGetTypeID()))
       CFPreferencesSetAppValue(CFSTR(AP_LocalPort), @"8080", appID);
+    CFRelease(value);
 
     value = CFPreferencesCopyAppValue(CFSTR(AP_Logging), appID);
     if (!(value && CFGetTypeID(value) == CFBooleanGetTypeID()))
       CFPreferencesSetAppValue(CFSTR(AP_Logging), kCFBooleanFalse, appID);
+    CFRelease(value);
 
     value = CFPreferencesCopyAppValue(CFSTR(AP_PromptCredentials), appID);
     if (!(value && CFGetTypeID(value) == CFBooleanGetTypeID()))
       CFPreferencesSetAppValue(CFSTR(AP_PromptCredentials), kCFBooleanFalse, appID);
+    CFRelease(value);
     
 //    value = CFPreferencesCopyAppValue(CFSTR(AP_AutoStart), appID);
 //    if (!(value && CFGetTypeID(value) == CFBooleanGetTypeID()))
@@ -77,35 +83,44 @@
     if (!(value && CFGetTypeID(value) == CFNumberGetTypeID()))
     {
       int minusOne = -1;
+      CFNumberRef minusOneNumber = CFNumberCreate(kCFAllocatorDefault, kCFNumberSInt32Type, &minusOne);
       CFPreferencesSetAppValue(CFSTR(AP_DaemonPID),
-                               CFNumberCreate(kCFAllocatorDefault, kCFNumberSInt32Type, &minusOne),
+                               minusOneNumber,
                                appID);
+      CFRelease(minusOneNumber);
     }
+    CFRelease(value);
 
     value = CFPreferencesCopyAppValue(CFSTR(AP_AutoConfig), appID);
     if (!(value && CFGetTypeID(value) == CFBooleanGetTypeID()))
       CFPreferencesSetAppValue(CFSTR(AP_AutoConfig), kCFBooleanFalse, appID);
+    CFRelease(value);
 
     value = CFPreferencesCopyAppValue(CFSTR(AP_PACAddress), appID);
     if (!(value && CFGetTypeID(value) == CFStringGetTypeID()))
       CFPreferencesSetAppValue(CFSTR(AP_PACAddress), @"http://www.myhost.edu.au/proxy.pac", appID);
+    CFRelease(value);
 
     value = CFPreferencesCopyAppValue(CFSTR(AP_ExternalConnections), appID);
     if (!(value && CFGetTypeID(value) == CFBooleanGetTypeID()))
       CFPreferencesSetAppValue(CFSTR(AP_ExternalConnections), kCFBooleanFalse, appID);
+    CFRelease(value);
     
     //NTLM settings
     value = CFPreferencesCopyAppValue(CFSTR(AP_NTLM), appID);
     if (!(value && CFGetTypeID(value) == CFBooleanGetTypeID()))
       CFPreferencesSetAppValue(CFSTR(AP_NTLM), kCFBooleanFalse, appID);
+    CFRelease(value);
     
     value = CFPreferencesCopyAppValue(CFSTR(AP_NTLM_Domain), appID);
     if (!(value && CFGetTypeID(value) == CFStringGetTypeID()))
       CFPreferencesSetAppValue(CFSTR(AP_NTLM_Domain), @"domain", appID);
+    CFRelease(value);
 
     value = CFPreferencesCopyAppValue(CFSTR(AP_NTLM_Host), appID);
     if (!(value && CFGetTypeID(value) == CFStringGetTypeID()))
       CFPreferencesSetAppValue(CFSTR(AP_NTLM_Host), @"host", appID);
+    CFRelease(value);
 
     lastLocalPort = [[NSMutableString alloc] initWithCapacity:32];
     [lastLocalPort setString:@"unknown"];
@@ -167,10 +182,11 @@
 - (void)mainViewDidLoad
 {
   char *un=NULL, *pw=NULL;
+  CFPropertyListRef v;
 
   CFPreferencesAppSynchronize(appID);
-  
-  if(decodePassKey((char *)[(NSString*)CFPreferencesCopyAppValue( CFSTR(AP_Authorization), appID ) cString], &un, &pw))
+  v = CFPreferencesCopyAppValue( CFSTR(AP_Authorization), appID );
+  if(decodePassKey((char *)[(NSString*)v cString], &un, &pw))
   {
     //decode was unsuccessful, so fill in default values
     [fUsername setStringValue:@"noone"];
@@ -181,31 +197,26 @@
     [fUsername setStringValue:[NSString stringWithCString:un]];
     [fPassword setStringValue:[NSString stringWithCString:pw]];
   }
+  CFRelease(v);
 
   free(un);
   free(pw);
   
-  [fAddress setStringValue:(NSString*)CFPreferencesCopyAppValue(CFSTR(AP_Address), appID)];
-  [fRemotePort setStringValue:(NSString*)CFPreferencesCopyAppValue(CFSTR(AP_RemotePort), appID)];
-  [fLocalPort setStringValue:(NSString*)CFPreferencesCopyAppValue(CFSTR(AP_LocalPort), appID)];
-  [cLogging setState:CFBooleanGetValue(CFPreferencesCopyAppValue(CFSTR(AP_Logging), appID))];
-  [cExternalConnections setState:CFBooleanGetValue(CFPreferencesCopyAppValue(CFSTR(AP_ExternalConnections), appID))];
-  [cPromptForCredentials setState:CFBooleanGetValue(CFPreferencesCopyAppValue(CFSTR(AP_PromptCredentials), appID))];
-  CFNumberGetValue(CFPreferencesCopyAppValue(CFSTR(AP_DaemonPID), appID),
-                   kCFNumberSInt32Type,
-                   &daemonPID);
-  [fPACAddress setStringValue:(NSString*)CFPreferencesCopyAppValue(CFSTR(AP_PACAddress), appID)];
-  if(CFBooleanGetValue(CFPreferencesCopyAppValue(CFSTR(AP_AutoConfig), appID)))
-    [rAutoConfig performClick:self];
-  else
-    [rNoAutoConfig performClick:self];
-     
+  v = CFPreferencesCopyAppValue(CFSTR(AP_Address), appID);    [fAddress setStringValue:(NSString*)v];     CFRelease(v);
+  v = CFPreferencesCopyAppValue(CFSTR(AP_RemotePort), appID); [fRemotePort setStringValue:(NSString*)v];  CFRelease(v);
+  v = CFPreferencesCopyAppValue(CFSTR(AP_LocalPort), appID);  [fLocalPort setStringValue:(NSString*)v];   CFRelease(v);
+  v = CFPreferencesCopyAppValue(CFSTR(AP_Logging), appID);    [cLogging setState:CFBooleanGetValue(v)];   CFRelease(v);
+  v = CFPreferencesCopyAppValue(CFSTR(AP_ExternalConnections), appID);  [cExternalConnections setState:CFBooleanGetValue(v)];   CFRelease(v);
+  v = CFPreferencesCopyAppValue(CFSTR(AP_PromptCredentials), appID);    [cPromptForCredentials setState:CFBooleanGetValue(v)];  CFRelease(v);
+  v = CFPreferencesCopyAppValue(CFSTR(AP_DaemonPID), appID);  CFNumberGetValue(v, kCFNumberSInt32Type, &daemonPID); CFRelease(v);
+  v = CFPreferencesCopyAppValue(CFSTR(AP_PACAddress), appID); [fPACAddress setStringValue:(NSString*)v];  CFRelease(v);
+  v = CFPreferencesCopyAppValue(CFSTR(AP_AutoConfig), appID); CFBooleanGetValue(v) ? [rAutoConfig performClick:self] : [rNoAutoConfig performClick:self]; CFRelease(v);
   [self setAutoManualConfig:mAutoManualConfig];
 
   //NTLM
-  [fNTLMDomain setStringValue:(NSString*)CFPreferencesCopyAppValue(CFSTR(AP_NTLM_Domain), appID)];
-  [fNTLMHost setStringValue:(NSString*)CFPreferencesCopyAppValue(CFSTR(AP_NTLM_Host), appID)];
-  [cNTLMEnabled setState:CFBooleanGetValue(CFPreferencesCopyAppValue(CFSTR(AP_NTLM), appID))];
+  v = CFPreferencesCopyAppValue(CFSTR(AP_NTLM_Domain), appID);  [fNTLMDomain setStringValue:(NSString*)v];    CFRelease(v);
+  v = CFPreferencesCopyAppValue(CFSTR(AP_NTLM_Host), appID);    [fNTLMHost setStringValue:(NSString*)v];      CFRelease(v);
+  v = CFPreferencesCopyAppValue(CFSTR(AP_NTLM), appID);         [cNTLMEnabled setState:CFBooleanGetValue(v)]; CFRelease(v);
   [self setNTLMConfig:cNTLMEnabled];
   
   //that's it, just set this updateStatus method going every second
@@ -335,7 +346,7 @@
           unsigned int endIndex, length = [logStr length];
           while(myRange.location < length)
           {
-            [logStr getLineStart:&myRange.location end:&endIndex contentsEnd:nil forRange:myRange];
+            [logStr getLineStart:&myRange.location end:&endIndex contentsEnd:nil forRange:myRange]; //gcc warning "incompatible pointer type" because getLineStart expects long on x86_64 and int otherwise. Dunno what to do.
             myRange.length=endIndex-myRange.location;
             mySearchRange = [logStr rangeOfString:@"/authoxyd" options:0 range:myRange];
             if(mySearchRange.length != 0)
@@ -538,9 +549,10 @@
   else
     CFPreferencesSetAppValue(CFSTR(AP_PromptCredentials), kCFBooleanFalse, appID);
   
-  CFPreferencesSetAppValue(CFSTR(AP_DaemonPID),
-                           CFNumberCreate(kCFAllocatorDefault, kCFNumberSInt32Type, &daemonPID),
-                           appID);
+  CFNumberRef daemonPIDNumber = CFNumberCreate(kCFAllocatorDefault, kCFNumberSInt32Type, &daemonPID);
+  CFPreferencesSetAppValue(CFSTR(AP_DaemonPID), daemonPIDNumber, appID);
+  CFRelease(daemonPIDNumber);
+  
   CFPreferencesSetAppValue(CFSTR(AP_PACAddress), [fPACAddress stringValue], appID);
   if([rAutoConfig state] == NSOnState)
     CFPreferencesSetAppValue(CFSTR(AP_AutoConfig), kCFBooleanTrue, appID);
@@ -571,46 +583,62 @@
 
   CFPreferencesAppSynchronize(appID);
   
-  if(CFBooleanGetValue(CFPreferencesCopyAppValue(CFSTR(AP_AutoConfig), appID)))
+  CFPropertyListRef arg_AutoConfig, arg_Authorization, arg_PACAddress, arg_RemotePort, arg_LocalPort, arg_Logging, arg_ExternalConnections, arg_Address;
+  arg_AutoConfig    = CFPreferencesCopyAppValue(CFSTR(AP_AutoConfig), appID);
+  arg_Authorization = CFPreferencesCopyAppValue(CFSTR(AP_Authorization), appID);
+  arg_PACAddress    = CFPreferencesCopyAppValue(CFSTR(AP_PACAddress), appID);
+  arg_RemotePort    = CFPreferencesCopyAppValue(CFSTR(AP_RemotePort), appID);
+  arg_LocalPort     = CFPreferencesCopyAppValue(CFSTR(AP_LocalPort), appID);
+  arg_Logging       = CFPreferencesCopyAppValue(CFSTR(AP_Logging), appID);
+  arg_ExternalConnections = CFPreferencesCopyAppValue(CFSTR(AP_ExternalConnections), appID);
+  arg_Address       = CFPreferencesCopyAppValue(CFSTR(AP_Address), appID);
+  
+  if(CFBooleanGetValue(arg_AutoConfig))
   {
-    args = [NSArray arrayWithObjects:
-      (NSString*)CFPreferencesCopyAppValue(CFSTR(AP_Authorization), appID),
-      (NSString*)CFPreferencesCopyAppValue(CFSTR(AP_PACAddress), appID),	//note using PACaddress in place of address
-      (NSString*)CFPreferencesCopyAppValue(CFSTR(AP_RemotePort), appID),
-      (NSString*)CFPreferencesCopyAppValue(CFSTR(AP_LocalPort), appID),
-      [NSString stringWithString:
-        (CFBooleanGetValue(CFPreferencesCopyAppValue(CFSTR(AP_Logging), appID)) ? ARGUMENT_LOGGING : ARGUMENT_NO_LOGGING)],
-      @"true",	//use auto config
-      [NSString stringWithString:
-        (CFBooleanGetValue(CFPreferencesCopyAppValue(CFSTR(AP_ExternalConnections), appID)) ? @"true" : @"false")],
-      nil];
+    args = [NSArray arrayWithObjects: (NSString*)arg_Authorization,
+                                      (NSString*)arg_PACAddress,	//note using PACaddress in place of address
+                                      (NSString*)arg_RemotePort,
+                                      (NSString*)arg_LocalPort,
+                                      [NSString stringWithString:(CFBooleanGetValue(arg_Logging) ? ARGUMENT_LOGGING : ARGUMENT_NO_LOGGING)],
+                                      @"true",	//use auto config
+                                      [NSString stringWithString:(CFBooleanGetValue(arg_ExternalConnections) ? @"true" : @"false")],
+                                      nil];
   }
   else
   {
-    args = [NSArray arrayWithObjects:
-      (NSString*)CFPreferencesCopyAppValue(CFSTR(AP_Authorization), appID),
-      (NSString*)CFPreferencesCopyAppValue(CFSTR(AP_Address), appID),
-      (NSString*)CFPreferencesCopyAppValue(CFSTR(AP_RemotePort), appID),
-      (NSString*)CFPreferencesCopyAppValue(CFSTR(AP_LocalPort), appID),
-      [NSString stringWithString:
-        (CFBooleanGetValue(CFPreferencesCopyAppValue(CFSTR(AP_Logging), appID)) ? ARGUMENT_LOGGING : ARGUMENT_NO_LOGGING)],
-      @"false",	//no auto config here
-      [NSString stringWithString:
-        (CFBooleanGetValue(CFPreferencesCopyAppValue(CFSTR(AP_ExternalConnections), appID)) ? @"true" : @"false")],
-      nil];
+    args = [NSArray arrayWithObjects: (NSString*)arg_Authorization,
+                                      (NSString*)arg_Address,
+                                      (NSString*)arg_RemotePort,
+                                      (NSString*)arg_LocalPort,
+                                      [NSString stringWithString:(CFBooleanGetValue(arg_Logging) ? ARGUMENT_LOGGING : ARGUMENT_NO_LOGGING)],
+                                      @"false",	//no auto config here
+                                      [NSString stringWithString:(CFBooleanGetValue(arg_ExternalConnections) ? @"true" : @"false")],
+                                      nil];
   }
   
-  if(CFBooleanGetValue(CFPreferencesCopyAppValue(CFSTR(AP_NTLM), appID)))
+  CFRelease(arg_AutoConfig); CFRelease(arg_Authorization); CFRelease(arg_PACAddress); CFRelease(arg_RemotePort);
+  CFRelease(arg_LocalPort); CFRelease(arg_Logging); CFRelease(arg_ExternalConnections); CFRelease(arg_Address);
+  
+  CFPropertyListRef arg_NTLM;
+  arg_NTLM = CFPreferencesCopyAppValue(CFSTR(AP_NTLM), appID);
+  
+  if(CFBooleanGetValue(arg_NTLM))
   {
-    NSArray *argsNTLM = [args arrayByAddingObjectsFromArray:[NSArray arrayWithObjects:
-      (NSString*)CFPreferencesCopyAppValue(CFSTR(AP_NTLM_Domain), appID), //add Domain and Host settings if using NTLM
-      (NSString*)CFPreferencesCopyAppValue(CFSTR(AP_NTLM_Host), appID),
-      nil]];
+    CFPropertyListRef arg_NTLMDomain, arg_NTLMHost;
+    arg_NTLMDomain  = CFPreferencesCopyAppValue(CFSTR(AP_NTLM_Domain), appID);
+    arg_NTLMHost    = CFPreferencesCopyAppValue(CFSTR(AP_NTLM_Host), appID);
+    //add Domain and Host settings if using NTLM
+    NSArray *argsNTLM = [args arrayByAddingObjectsFromArray:
+                         [NSArray arrayWithObjects:(NSString*)arg_NTLMDomain, (NSString*)arg_NTLMHost, nil]];
     
+    CFRelease(arg_NTLM); CFRelease(arg_NTLMDomain); CFRelease(arg_NTLMHost);
     return argsNTLM;
   }
   else
+  {
+    CFRelease(arg_NTLM);
     return args;
+  }
 }
 
 /****************************************************************/

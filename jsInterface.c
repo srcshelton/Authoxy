@@ -185,7 +185,8 @@ char* executePAC(JSContext *cx, JSFunction *compiledScript, const char *arg1, co
   
   str = JS_ValueToString(cx, rval);
   char *result = (char *)malloc(JS_GetStringLength(str)+1);
-  result = JS_GetStringBytes(str);
+  char *tempResult = JS_GetStringBytes(str);
+  strcpy(result, tempResult);
   
 //  syslog(LOG_NOTICE, "script result: %s", JS_GetStringBytes(str));
 
@@ -254,7 +255,8 @@ size_t collectData(void *ptr, size_t size, size_t nmemb, void *stream)
 //  syslog(LOG_NOTICE, "streamPtr is:");
 //  syslog(LOG_NOTICE, streamPtr);
 
-  *((char**)stream) = streamPtr;
+  if(stream)
+    *((char**)stream) = streamPtr;
   
   return nmemb*size;
 }
