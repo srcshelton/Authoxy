@@ -14,6 +14,8 @@
     theTimer = [NSTimer scheduledTimerWithTimeInterval:0.5 target:self selector:@selector(promptForCredentials:) userInfo:nil repeats:NO];
   else
     theTimer = [NSTimer scheduledTimerWithTimeInterval:0.5 target:self selector:@selector(doTheStuff:) userInfo:nil repeats:NO];
+  if(check)
+    CFRelease(check);
 }
 
 - (void)promptForCredentials:(NSTimer*)theTimer
