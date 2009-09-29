@@ -48,32 +48,38 @@
     value = CFPreferencesCopyAppValue(CFSTR(AP_Authorization), appID);
     if (!(value && CFGetTypeID(value) == CFStringGetTypeID()))
       CFPreferencesSetAppValue(CFSTR(AP_Authorization), @"Undefined", appID);
-    CFRelease(value);
+    if(value)
+      CFRelease(value);
 
     value = CFPreferencesCopyAppValue(CFSTR(AP_Address), appID);
     if (!(value && CFGetTypeID(value) == CFStringGetTypeID()))
       CFPreferencesSetAppValue(CFSTR(AP_Address), @"proxy.myhost.edu.au", appID);
-    CFRelease(value);
+    if(value)
+      CFRelease(value);
 
     value = CFPreferencesCopyAppValue(CFSTR(AP_RemotePort), appID);
     if (!(value && CFGetTypeID(value) == CFStringGetTypeID()))
       CFPreferencesSetAppValue(CFSTR(AP_RemotePort), @"8080", appID);
-    CFRelease(value);
+    if(value)
+      CFRelease(value);
 
     value = CFPreferencesCopyAppValue(CFSTR(AP_LocalPort), appID);
     if (!(value && CFGetTypeID(value) == CFStringGetTypeID()))
       CFPreferencesSetAppValue(CFSTR(AP_LocalPort), @"8080", appID);
-    CFRelease(value);
+    if(value)
+      CFRelease(value);
 
     value = CFPreferencesCopyAppValue(CFSTR(AP_Logging), appID);
     if (!(value && CFGetTypeID(value) == CFBooleanGetTypeID()))
       CFPreferencesSetAppValue(CFSTR(AP_Logging), kCFBooleanFalse, appID);
-    CFRelease(value);
+    if(value)
+      CFRelease(value);
 
     value = CFPreferencesCopyAppValue(CFSTR(AP_PromptCredentials), appID);
     if (!(value && CFGetTypeID(value) == CFBooleanGetTypeID()))
       CFPreferencesSetAppValue(CFSTR(AP_PromptCredentials), kCFBooleanFalse, appID);
-    CFRelease(value);
+    if(value)
+      CFRelease(value);
     
 //    value = CFPreferencesCopyAppValue(CFSTR(AP_AutoStart), appID);
 //    if (!(value && CFGetTypeID(value) == CFBooleanGetTypeID()))
@@ -89,38 +95,45 @@
                                appID);
       CFRelease(minusOneNumber);
     }
-    CFRelease(value);
+    if(value)
+      CFRelease(value);
 
     value = CFPreferencesCopyAppValue(CFSTR(AP_AutoConfig), appID);
     if (!(value && CFGetTypeID(value) == CFBooleanGetTypeID()))
       CFPreferencesSetAppValue(CFSTR(AP_AutoConfig), kCFBooleanFalse, appID);
-    CFRelease(value);
+    if(value)
+      CFRelease(value);
 
     value = CFPreferencesCopyAppValue(CFSTR(AP_PACAddress), appID);
     if (!(value && CFGetTypeID(value) == CFStringGetTypeID()))
       CFPreferencesSetAppValue(CFSTR(AP_PACAddress), @"http://www.myhost.edu.au/proxy.pac", appID);
-    CFRelease(value);
+    if(value)
+      CFRelease(value);
 
     value = CFPreferencesCopyAppValue(CFSTR(AP_ExternalConnections), appID);
     if (!(value && CFGetTypeID(value) == CFBooleanGetTypeID()))
       CFPreferencesSetAppValue(CFSTR(AP_ExternalConnections), kCFBooleanFalse, appID);
-    CFRelease(value);
+    if(value)
+      CFRelease(value);
     
     //NTLM settings
     value = CFPreferencesCopyAppValue(CFSTR(AP_NTLM), appID);
     if (!(value && CFGetTypeID(value) == CFBooleanGetTypeID()))
       CFPreferencesSetAppValue(CFSTR(AP_NTLM), kCFBooleanFalse, appID);
-    CFRelease(value);
+    if(value)
+      CFRelease(value);
     
     value = CFPreferencesCopyAppValue(CFSTR(AP_NTLM_Domain), appID);
     if (!(value && CFGetTypeID(value) == CFStringGetTypeID()))
       CFPreferencesSetAppValue(CFSTR(AP_NTLM_Domain), @"domain", appID);
-    CFRelease(value);
+    if(value)
+      CFRelease(value);
 
     value = CFPreferencesCopyAppValue(CFSTR(AP_NTLM_Host), appID);
     if (!(value && CFGetTypeID(value) == CFStringGetTypeID()))
       CFPreferencesSetAppValue(CFSTR(AP_NTLM_Host), @"host", appID);
-    CFRelease(value);
+    if(value)
+      CFRelease(value);
 
     lastLocalPort = [[NSMutableString alloc] initWithCapacity:32];
     [lastLocalPort setString:@"unknown"];

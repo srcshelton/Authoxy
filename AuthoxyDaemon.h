@@ -131,16 +131,16 @@ struct sharedData
 
 struct securityBuffer
 {
-  short   length;
-  short   length2;            //actually space allocated, but almost always == length
-  long    offset;
+  int16  length;
+  int16  length2;            //actually space allocated, but almost always == length
+  int32  offset;
 };
 
 struct type1Message
 {
   char    protocol[8];        // 'N', 'T', 'L', 'M', 'S', 'S', 'P', '\0'
-  long    type;               // 0x01
-  long    flags;              // 0xb203
+  int32  type;               // 0x01000000
+  int32  flags;              // 0xb2030000
 
   struct securityBuffer domain;
   
@@ -155,11 +155,11 @@ struct type1Message
 struct type2Message
 {
   char    protocol[8];          // 'N', 'T', 'L', 'M', 'S', 'S', 'P', '\0'
-  long    type;                 // 0x02
+  int32  type;                 // 0x02000000
   
   struct securityBuffer target; // offset 0x28
   
-  long    flags;                // 0x8201
+  int32  flags;                // 0x82010000
   char    nonce[8];             // nonce
   char    context[8];           // context
   struct securityBuffer targetInfo;
@@ -168,7 +168,7 @@ struct type2Message
 struct type3Message
 {
   char    protocol[8];              // 'N', 'T', 'L', 'M', 'S', 'S', 'P', '\0'
-  long    type;                     // 0x03
+  int32  type;                     // 0x03000000
   
   struct securityBuffer LMResponse; //length always 0x18
   struct securityBuffer NTResponse; //length always 0x18
@@ -177,7 +177,7 @@ struct type3Message
   struct securityBuffer host;       //NOTE: again, called "workstation" in some texts
   struct securityBuffer sessionKey; //0, 0, message length
   
-  long   flags;                     // 0x8201
+  int32 flags;                     // 0x82010000
   
 //  char    dom[*];          // domain string (unicode UTF-16LE)
 //  char    user[*];         // username string (unicode UTF-16LE)

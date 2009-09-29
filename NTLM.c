@@ -739,8 +739,8 @@ int establishNTLMGetType1String(char **authString, int *authStringSize, const ch
 {
   int i, domLen = strlen(domain), workLen = strlen(workstation);
   struct type1Message msg;
-  long datal;
-  short datas;
+  int32 datal;
+  int16 datas;
   strcpy(msg.protocol, "NTLMSSP");
   datal = 1;
   msg.type = OSSwapHostToLittleInt32(datal);
@@ -794,8 +794,8 @@ int establishNTLMGetType1StringBase64(char **authString, int *authStringSize, co
 int establishNTLMParseType2String(char *authString, int authStringSize, char **nonce, int logging)
 {
   struct type2Message *msgPtr = (struct type2Message*)authString;
-  long datal;
-  short datas;
+  int32 datal;
+  int16 datas;
 
   if(strcmp(msgPtr->protocol, "NTLMSSP") != 0)
   {
@@ -958,8 +958,8 @@ int establishNTLMGetType3String(char **authString, int *authStringSize, const ch
 {
   int i, userLen = strlen(username), hostLen = strlen(domain), domLen = strlen(domain); 
   struct type3Message msg;
-  long datal;
-  short datas;
+  int32 datal;
+  int16 datas;
   strcpy(msg.protocol, "NTLMSSP");
   datal = 3;
   msg.type = OSSwapHostToLittleInt32(datal);
