@@ -16,6 +16,7 @@
 		45AA70F305A0455300774A9C /* Authoxy_PantherPref.nib in Resources */ = {isa = PBXBuildFile; fileRef = 45AA70F105A0455300774A9C /* Authoxy_PantherPref.nib */; };
 		45AA711405A0483800774A9C /* base64.c in Sources */ = {isa = PBXBuildFile; fileRef = 45AA70E505A0444A00774A9C /* base64.c */; };
 		45AA711505A0483A00774A9C /* base64.h in Headers */ = {isa = PBXBuildFile; fileRef = 45AA70E605A0444A00774A9C /* base64.h */; };
+		45CD5D4D1076E89E00C0EFCF /* jsapi.h in Headers */ = {isa = PBXBuildFile; fileRef = 45CD5D4C1076E89E00C0EFCF /* jsapi.h */; };
 		45D81DE805AAC1EE002570D8 /* base64.c in Sources */ = {isa = PBXBuildFile; fileRef = 45AA70E505A0444A00774A9C /* base64.c */; };
 		45D81DE905AAC1F1002570D8 /* base64.h in Headers */ = {isa = PBXBuildFile; fileRef = 45AA70E605A0444A00774A9C /* base64.h */; };
 		45FE231605A556E30006B484 /* NTLM.c in Sources */ = {isa = PBXBuildFile; fileRef = 45FE231505A556E30006B484 /* NTLM.c */; };
@@ -71,6 +72,7 @@
 		45B0E5DD05B2A35F009E8881 /* global.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = global.h; sourceTree = "<group>"; };
 		45B5256E062E72FE00BF205D /* COPYING */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = text; path = COPYING; sourceTree = "<group>"; };
 		45B52592062F60A200BF205D /* Authoxy ReadMe.rtf */ = {isa = PBXFileReference; lastKnownFileType = text.rtf; name = "Authoxy ReadMe.rtf"; path = "Docs/Authoxy ReadMe.rtf"; sourceTree = "<group>"; };
+		45CD5D4C1076E89E00C0EFCF /* jsapi.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = jsapi.h; sourceTree = "<group>"; };
 		45FE231505A556E30006B484 /* NTLM.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = NTLM.c; sourceTree = "<group>"; };
 		8D202CF70486D31800D8A456 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		8D202CF80486D31800D8A456 /* Authoxy.prefPane */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = Authoxy.prefPane; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -167,6 +169,7 @@
 		32DBCFA10370C40200C91783 /* Other Sources */ = {
 			isa = PBXGroup;
 			children = (
+				45CD5D4C1076E89E00C0EFCF /* jsapi.h */,
 				45AA70E605A0444A00774A9C /* base64.h */,
 				45AA70E505A0444A00774A9C /* base64.c */,
 				45B0E5DD05B2A35F009E8881 /* global.h */,
@@ -208,6 +211,7 @@
 				8D202CEB0486D31800D8A456 /* Authoxy_PantherPref.h in Headers */,
 				45AA70E205A0443300774A9C /* defaults.h in Headers */,
 				45AA711505A0483A00774A9C /* base64.h in Headers */,
+				45CD5D4D1076E89E00C0EFCF /* jsapi.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -474,7 +478,7 @@
 				INSTALL_PATH = /Users/liteyear/Library/PreferencePanes;
 				LIBRARY_SEARCH_PATHS = "";
 				LIBRARY_STYLE = Bundle;
-				MACOSX_DEPLOYMENT_TARGET = 10.2;
+				MACOSX_DEPLOYMENT_TARGET = 10.5;
 				OTHER_CFLAGS = "";
 				OTHER_LDFLAGS = (
 					"-bundle",
@@ -577,12 +581,11 @@
 		458B28150B3DF2720040372F /* Development */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ARCHS = (
-					ppc,
-					i386,
-				);
-				MACOSX_DEPLOYMENT_TARGET = 10.2;
-				SDKROOT = /Developer/SDKs/MacOSX10.4u.sdk;
+				ARCHS = "$(NATIVE_ARCH_ACTUAL)";
+				GCC_ENABLE_OBJC_GC = YES;
+				GCC_MODEL_TUNING = "";
+				MACOSX_DEPLOYMENT_TARGET = 10.5;
+				SDKROOT = /Developer/SDKs/MacOSX10.5.sdk;
 			};
 			name = Development;
 		};
@@ -601,7 +604,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				MACOSX_DEPLOYMENT_TARGET = 10.2;
-				SDKROOT = /Developer/SDKs/MacOSX10.4u.sdk;
+				SDKROOT = /Developer/SDKs/MacOSX10.5.sdk;
 			};
 			name = Default;
 		};

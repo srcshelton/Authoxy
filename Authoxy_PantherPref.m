@@ -90,9 +90,7 @@
     {
       int minusOne = -1;
       CFNumberRef minusOneNumber = CFNumberCreate(kCFAllocatorDefault, kCFNumberSInt32Type, &minusOne);
-      CFPreferencesSetAppValue(CFSTR(AP_DaemonPID),
-                               minusOneNumber,
-                               appID);
+      CFPreferencesSetAppValue(CFSTR(AP_DaemonPID), minusOneNumber, appID);
       CFRelease(minusOneNumber);
     }
     if(value)
