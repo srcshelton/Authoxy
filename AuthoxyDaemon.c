@@ -30,7 +30,7 @@
 #include <curl/curl.h>
   
 int main(int argc, char* argv[])
-{  
+{
   char usingNTLM=0;  //are we using NTLM?
   if(argc == 8)
     usingNTLM=0;
@@ -42,7 +42,11 @@ int main(int argc, char* argv[])
     return 1;
   }
 
-  signal(SIGCHLD, fireman);
+  char *cwd = getcwd(NULL, 0);  //so we can get to the Resources directory after we daemon.
+  
+  if(!ARG_TEST)
+    signal(SIGCHLD, fireman); //don't catch the child if we're testing - we want to see what happens to them with wait!
+  
   daemon(0, 0);
   //write our new PID to file (since it will be different to the one we started with)
   mode_t oldMask = umask(0);  //set new file mode to 0666 (read/write by everyone)
@@ -69,10 +73,9 @@ int main(int argc, char* argv[])
     }
   }
   umask(oldMask); //set it back
-  
+    
   int clientSocket;
   char *authStr;
-  JSFunction *compiledPAC;
   struct NTLMSettings theNTLMSettings;
 
   if(usingNTLM)
@@ -112,12 +115,11 @@ int main(int argc, char* argv[])
     global = JS_NewObject(cx, &global_class, NULL, NULL);
     JS_InitStandardClasses(cx, global);
     
-    compiledPAC = compilePAC(cx, ARG_ADD);
-    if(!compiledPAC)
+    if(compilePAC(cx, ARG_ADD, cwd))
       return 1;
   }
-  else
-    compiledPAC = NULL;
+  free(cwd); //only used for finding the Javascript PAC file at this stage.
+  
 //ARG_LPORT is local port number, MAX_PEND is max number of pending connections, ARG_EXTERN is true if external connections are allowed
   if( (clientSocket = establishClientSide(ARG_LPORT, MAX_PEND, ARG_EXTERN)) < 0)
     return 1;
@@ -158,22 +160,26 @@ int main(int argc, char* argv[])
           curl_easy_setopt(myCurl, CURLOPT_PROXY, proxyAdd);
           curl_easy_setopt(myCurl, CURLOPT_URL, "http://www.hrsoftworks.net/TestConnection.html");
           curl_easy_setopt(myCurl, CURLOPT_ERRORBUFFER, errorBuf);
-          if(curl_easy_perform(myCurl))	//download
-            syslog(LOG_ERR, "Failed to fetch URL: %s", errorBuf);
+          long resultCode = -1;
+          if(curl_easy_perform(myCurl) == CURLE_OK)	//download
+            curl_easy_getinfo(myCurl, CURLINFO_RESPONSE_CODE, &resultCode);
+          curl_easy_cleanup(myCurl);	//clean up after ourselves
+
+          if(resultCode == 200) //Success
+          {
+            syslog(LOG_NOTICE, "Successfully fetched URL.");
+            exit(EXIT_SUCCESS);            
+          }
           else
           {
-            long resultCode;
-            curl_easy_getinfo(myCurl, CURLINFO_RESPONSE_CODE, &resultCode);
-            if(resultCode == 200) //Success
-              syslog(LOG_NOTICE, "Successfully fetched URL.");
+            if(resultCode == -1) //Failed to get result from server
+              syslog(LOG_ERR, "Failed to fetch URL: %s", errorBuf);
             else if(resultCode == 407)  //Proxy authentication required
               syslog(LOG_ERR, "Failed to fetch URL. Proxy authentication rejected.");
             else
               syslog(LOG_ERR, "Failed to fetch URL. Server returned result code: %d", resultCode);
+            exit(EXIT_FAILURE);
           }
-          curl_easy_cleanup(myCurl);	//clean up after ourselves
-          
-          exit(EXIT_SUCCESS);
 
         //the parent will just continue on
       }
@@ -200,7 +206,7 @@ int main(int argc, char* argv[])
       case 0:							//the child
         close(clientSocket);	//the child doesn't need this
         if(ARG_AUTO)
-          performDaemonConnectionWithPACFile(compiledPAC, ARG_ADD, ARG_RPORT, clientConnection, authStr, usingNTLM, &theNTLMSettings, ARG_LOGTEST);
+          performDaemonConnectionWithPACFile(ARG_ADD, ARG_RPORT, clientConnection, authStr, usingNTLM, &theNTLMSettings, ARG_LOGTEST);
         else
           performDaemonConnection(ARG_ADD, ARG_RPORT, clientConnection, authStr, usingNTLM, &theNTLMSettings, ARG_LOGTEST);
       
@@ -215,7 +221,8 @@ int main(int argc, char* argv[])
           //This happens in the successful case when the client closes the connection after completing its request.
           int result = EXIT_SUCCESS;
           wait(&result);
-          if(result == EXIT_SUCCESS)
+          if((WIFEXITED(result) && WEXITSTATUS(result) == EXIT_SUCCESS) ||
+             (WIFSIGNALED(result) && WTERMSIG(result) == SIGTERM))
             syslog(LOG_NOTICE, "No connection problems. Check the log at %s if you experience difficulties.", AUTHOXYD_TEST_PATH);
           else
             syslog(LOG_NOTICE, "Connection failed. A log of the communication has been written to %s", AUTHOXYD_TEST_PATH);
@@ -259,7 +266,7 @@ void performDaemonConnection(char *argAdd, int argRPort, int clientConnection, c
     exit(EXIT_SUCCESS);
 }
 
-void performDaemonConnectionWithPACFile(JSFunction *compiledPAC, char *argADD, int argRPort, int clientConnection, char *authStr, char usingNTLM, struct NTLMSettings *theNTLMSettingsPtr, int logging)
+void performDaemonConnectionWithPACFile(char *argADD, int argRPort, int clientConnection, char *authStr, char usingNTLM, struct NTLMSettings *theNTLMSettingsPtr, int logging)
 {
   int serverSocket;
   
@@ -317,14 +324,16 @@ void performDaemonConnectionWithPACFile(JSFunction *compiledPAC, char *argADD, i
       requestPort=80; //that's the default if no port is specified
 
     JSContext *threadcx=NULL;
-    if(!(threadcx = JS_NewContext(rt, 4L * 1024L)))
+    if(!(threadcx = JS_NewContext(rt, 8L * 1024L)))
     {
       syslog(LOG_ERR, "Unable to create thread context");
       exit(EXIT_FAILURE);
     }
-    if(!(result = executePAC(threadcx, compiledPAC, requestURL, requestHost)))
+    if(!(result = executePAC(threadcx, requestURL, requestHost)))
       exit(EXIT_FAILURE);
+    
     JS_DestroyContext(threadcx);
+    
     //Okay, PAC file has been executed. We need to iterate through the result string trying to contact the servers provided.
     char *resultIter = result;
     char direct;  //bool value. DIRECT connection?
@@ -335,7 +344,7 @@ void performDaemonConnectionWithPACFile(JSFunction *compiledPAC, char *argADD, i
         syslog(LOG_NOTICE, "Exhausted PAC file server list and still failed to make a connection. Giving up on connection.");
         close(clientConnection);
         exit(EXIT_FAILURE);
-      }      
+      }
       else if(*resultIter=='D')                                               //Direct connection.
       {
         strcpy(proxyAdd, requestHost);                                        //In a direct connection we need to contact the server directly
@@ -365,12 +374,10 @@ void performDaemonConnectionWithPACFile(JSFunction *compiledPAC, char *argADD, i
         resultIter++;
       while(*resultIter!='D' && *resultIter!='P' && *resultIter!='\0')
         resultIter++;
-      
-//      syslog(LOG_NOTICE, "About to try %s:%d, direct:%d", proxyAdd, proxyPort, direct);
     }
     while( (serverSocket = establishServerSide(proxyAdd, proxyPort)) < 0 );
     free(result);
-    
+
     if(conductSession(clientConnection, (direct ? "" : authStr), serverSocket, logging, (!direct && usingNTLM) ? theNTLMSettingsPtr : NULL) < 0)
     {
       close(clientConnection);

@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		4548A28210F5FFE7001E7EF0 /* pacUtils.js in CopyFiles */ = {isa = PBXBuildFile; fileRef = 4548A25010F5ECBB001E7EF0 /* pacUtils.js */; };
 		45AA70CF05A042B000774A9C /* AuthoxyDaemon.c in Sources */ = {isa = PBXBuildFile; fileRef = 45AA70C305A042AF00774A9C /* AuthoxyDaemon.c */; };
 		45AA70D005A042B000774A9C /* AuthoxyDaemon.h in Headers */ = {isa = PBXBuildFile; fileRef = 45AA70C405A042AF00774A9C /* AuthoxyDaemon.h */; };
 		45AA70D105A042B000774A9C /* connections.c in Sources */ = {isa = PBXBuildFile; fileRef = 45AA70C505A042AF00774A9C /* connections.c */; };
@@ -40,6 +41,16 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
+		4548A28B10F6000B001E7EF0 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 7;
+			files = (
+				4548A28210F5FFE7001E7EF0 /* pacUtils.js in CopyFiles */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		45FE7B240B40BE48005FBB61 /* CopyFiles */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -58,6 +69,7 @@
 		089C167FFE841241C02AAC07 /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = /System/Library/Frameworks/AppKit.framework; sourceTree = "<absolute>"; };
 		1058C7ADFEA557BF11CA2CBB /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = /System/Library/Frameworks/Cocoa.framework; sourceTree = "<absolute>"; };
 		32DBCFA20370C41700C91783 /* Authoxy-Panther_Prefix.pch */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "Authoxy-Panther_Prefix.pch"; sourceTree = "<group>"; };
+		4548A25010F5ECBB001E7EF0 /* pacUtils.js */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.javascript; path = pacUtils.js; sourceTree = "<group>"; };
 		45AA70C305A042AF00774A9C /* AuthoxyDaemon.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = AuthoxyDaemon.c; sourceTree = "<group>"; };
 		45AA70C405A042AF00774A9C /* AuthoxyDaemon.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; path = AuthoxyDaemon.h; sourceTree = "<group>"; };
 		45AA70C505A042AF00774A9C /* connections.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; path = connections.c; sourceTree = "<group>"; };
@@ -119,6 +131,7 @@
 		089C167CFE841241C02AAC07 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				4548A25010F5ECBB001E7EF0 /* pacUtils.js */,
 				45AA70F105A0455300774A9C /* Authoxy_PantherPref.nib */,
 				45AA70ED05A044D000774A9C /* Authoxy_PantherPref.icns */,
 				45B5256E062E72FE00BF205D /* COPYING */,
@@ -244,6 +257,7 @@
 				8D202CF20486D31800D8A456 /* Frameworks */,
 				8D202CF50486D31800D8A456 /* Rez */,
 				45FE7B240B40BE48005FBB61 /* CopyFiles */,
+				4548A28B10F6000B001E7EF0 /* CopyFiles */,
 				45AA71ED05A0535100774A9C /* ShellScript */,
 			);
 			buildRules = (

@@ -63,7 +63,7 @@ int conductSession(int clientConnection, char authStr[], int serverSocket, int l
       {
         if(logging)
           syslog(LOG_NOTICE, "Client closed connection, killing session processes.");
-        kill(getppid(), SIGKILL);	//the client closed the connection, so kill the server connection as well
+        kill(getppid(), SIGTERM);	//the client closed the connection, so kill the server connection as well
         exit(EXIT_SUCCESS);
       }
       
@@ -79,7 +79,7 @@ int conductSession(int clientConnection, char authStr[], int serverSocket, int l
       {
         if(logging)
           syslog(LOG_NOTICE, "Server closed connection, killing session processes.");
-        kill(pid, SIGKILL);	//the server closed the connection, so kill the client connection as well
+        kill(pid, SIGTERM);	//the server closed the connection, so kill the client connection as well
         exit(EXIT_SUCCESS);
       }      
   }

@@ -78,7 +78,7 @@
 struct NTLMSettings;  //forward declaration
 
 void performDaemonConnection(char *argADD, int argRPort, int clientConnection, char *authStr, char usingNTLM, struct NTLMSettings *theNTLMSettingsPtr, int logging);
-void performDaemonConnectionWithPACFile(JSFunction *compiledPAC, char *argADD, int argRPort, int clientConnection, char *authStr, char usingNTLM, struct NTLMSettings *theNTLMSettingsPtr, int logging);
+void performDaemonConnectionWithPACFile(char *argADD, int argRPort, int clientConnection, char *authStr, char usingNTLM, struct NTLMSettings *theNTLMSettingsPtr, int logging);
 
 void fireman(int sig);
 int bufferMatchesStringAtIndex(const char *buffer, const char *string, int index);
@@ -247,5 +247,5 @@ extern JSObject *global;
 extern JSClass global_class;
 
 //function prototypes
-JSFunction* compilePAC(JSContext *cx, char *pacURL);
-char* executePAC(JSContext *cx, JSFunction *compiledScript, const char *arg1, const char *arg2);
+int compilePAC(JSContext *cx, char *pacURL, char *cwd);
+char* executePAC(JSContext *cx, const char *arg1, const char *arg2);

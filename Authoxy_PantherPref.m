@@ -309,10 +309,10 @@
     {
       if(count > 1)
         [statusString setString:
-          [NSString stringWithFormat:@"%d daemons running\non 127.0.0.1 port %@", count, lastLocalPort]];
+          [NSString stringWithFormat:@"Running on port %@\n%d daemons active", lastLocalPort, count]];
       else
         [statusString setString:
-          [NSString stringWithFormat:@"%d daemon running\non 127.0.0.1 port %@", count, lastLocalPort]];
+          [NSString stringWithFormat:@"Running on port %@\n%d daemon active", lastLocalPort, count]];
       bRunning=TRUE;
     }
     else
@@ -413,9 +413,13 @@
     NSString *daemonPath = [[NSBundle bundleWithIdentifier:@"net.hrsoftworks.AuthoxyPref"] pathForAuxiliaryExecutable:@"authoxyd"];
     if(daemonPath != NULL)
     {
-      NSTask *daemon = [NSTask launchedTaskWithLaunchPath:daemonPath arguments:[self getDaemonStartArgs]];
-      
-//      [NSThread sleepUntilDate:[NSDate dateWithTimeIntervalSinceNow:10]];  //pause for two seconds before getting the PID
+      //NSTask *daemon = [NSTask launchedTaskWithLaunchPath:daemonPath arguments:[self getDaemonStartArgs]];
+      NSTask *daemon = [[NSTask alloc] init];
+      [daemon setLaunchPath:daemonPath];
+      [daemon setArguments:[self getDaemonStartArgs]];
+      [daemon setCurrentDirectoryPath:[daemonPath stringByDeletingLastPathComponent]];
+      [daemon launch];
+      //      [NSThread sleepUntilDate:[NSDate dateWithTimeIntervalSinceNow:10]];  //pause for two seconds before getting the PID
       
     //Note that this is just an educated guess at best. Because daemon() calls fork(), the PID could be
     //anything. This only way to ensure we have the correct PID is to get the daemon to report it after
@@ -426,6 +430,7 @@
                                                   //WTF? As of 040112, it seems to be PID+2??? Today it's not. Watch this fix_prebinding!
                                                   //      if([statusTimer respondsToSelector:@selector(setFireDate:)])
                                                   //        [statusTimer setFireDate:[NSDate dateWithTimeIntervalSinceNow:0.5]];
+      [daemon release];
     }
     else
     {
@@ -471,7 +476,16 @@
     NSArray *args = [self getDaemonStartArgs];
     NSMutableArray *modifiedArgs = [NSMutableArray arrayWithArray:args];
     [modifiedArgs replaceObjectAtIndex:daLogging withObject:ARGUMENT_TESTING];
-    [NSTask launchedTaskWithLaunchPath:daemonPath arguments:modifiedArgs];
+    
+    //[NSTask launchedTaskWithLaunchPath:daemonPath arguments:modifiedArgs];
+    //Do it the long way so we can set the current directory
+    NSTask *daemon = [[NSTask alloc] init];
+    [daemon setLaunchPath:daemonPath];
+    [daemon setArguments:modifiedArgs];
+    [daemon setCurrentDirectoryPath:[daemonPath stringByDeletingLastPathComponent]];
+    [daemon launch];
+    [daemon release];
+    
   }
   else
     [fStatus setStringValue:@"Fatal Error: Daemon not found.\nReinstall Authoxy"];
