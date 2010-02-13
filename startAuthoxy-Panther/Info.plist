@@ -17,7 +17,7 @@
 	<key>CFBundleSignature</key>
 	<string>HRSW</string>
 	<key>CFBundleVersion</key>
-	<string>3.5.2</string>
+	<string>3.6</string>
 	<key>NSMainNibFile</key>
 	<string>MainMenu</string>
 	<key>NSPrincipalClass</key>

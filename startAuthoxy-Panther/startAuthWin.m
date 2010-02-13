@@ -59,7 +59,13 @@
     NSArray *args = [self getDaemonStartArgs];
     if(args)
     {
-      NSTask *daemon = [NSTask launchedTaskWithLaunchPath:daemonPath arguments:args];
+//      NSTask *daemon = [NSTask launchedTaskWithLaunchPath:daemonPath arguments:args];
+      NSTask *daemon = [[NSTask alloc] init];
+      [daemon setLaunchPath:daemonPath];
+      [daemon setArguments:[self getDaemonStartArgs]];
+      [daemon setCurrentDirectoryPath:[daemonPath stringByDeletingLastPathComponent]];
+      [daemon launch];
+      
 //      int daemonPID = [daemon processIdentifier] + 1;  //plus one because it daemons and increments the PID
                                                        //(hope it doesn't loop or skip or something)
       //okay, there's no guarantee that that +1 shit will give us the right PID. Instead, we're going to
@@ -86,6 +92,8 @@
       CFPreferencesSetAppValue(CFSTR("AuthoxyDaemonPID"),
                               CFNumberCreate(kCFAllocatorDefault, kCFNumberSInt32Type, &daemonPID),
                               appID);
+      
+      [daemon release];
     }
     else
       [status setStringValue:@"Failed: configure Authoxy in System Preferences first."];
